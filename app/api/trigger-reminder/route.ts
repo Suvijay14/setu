@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import type { Patient } from "@/lib/patient";
 
@@ -25,7 +25,8 @@ function normalizeReminderTime(value: string | null): string | null {
   return `${match[1].padStart(2, "0")}:${match[2]}`;
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const force = request.nextUrl.searchParams.get("force") === "true";
   const apiKey = process.env.BOLNA_API_KEY;
   const agentId = process.env.BOLNA_AGENT_ID;
 
@@ -49,11 +50,13 @@ export async function POST() {
     return NextResponse.json({ triggered: 0 });
   }
 
-  const currentIst = getCurrentTimeIST();
-  const duePatients = (patients as Patient[]).filter((patient) => {
-    const normalized = normalizeReminderTime(patient.reminder_time);
-    return normalized === currentIst;
-  });
+  const onboardedPatients = patients as Patient[];
+  const duePatients = force
+    ? onboardedPatients
+    : onboardedPatients.filter((patient) => {
+        const normalized = normalizeReminderTime(patient.reminder_time);
+        return normalized === getCurrentTimeIST();
+      });
 
   let count = 0;
 
