@@ -7,6 +7,7 @@ import {
   isOnboardingTranscript,
   parseOnboardingCallTranscript,
 } from "@/lib/patient";
+import { analyzeCallTranscript } from "@/lib/analyzeCallTranscript";
 import type { BolnaWebhookPayload } from "@/lib/types";
 
 const twilioClient = twilio(
@@ -32,9 +33,8 @@ export async function POST(request: NextRequest) {
   const status = body.status;
   const transcript = body.transcript ?? "";
   const duration = body.duration;
-  const medication_taken = body.extracted_data?.medication_taken;
-  const action_required = body.extracted_data?.action_required;
-  const patient_concern = body.extracted_data?.patient_concern;
+  const { medication_taken, action_required, patient_concern } =
+    analyzeCallTranscript(transcript);
   const extractedRecord = body.extracted_data as
     | Record<string, unknown>
     | undefined;

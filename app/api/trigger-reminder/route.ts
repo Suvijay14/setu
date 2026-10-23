@@ -25,7 +25,11 @@ function normalizeReminderTime(value: string | null): string | null {
   return `${match[1].padStart(2, "0")}:${match[2]}`;
 }
 
-export async function POST(request: NextRequest) {
+function hasPlaceholderPhone(phone: string): boolean {
+  return phone.startsWith("onboarding_") || phone.startsWith("temp_");
+}
+
+async function handleTriggerReminder(request: NextRequest) {
   const force = request.nextUrl.searchParams.get("force") === "true";
   const apiKey = process.env.BOLNA_API_KEY;
   const agentId = process.env.BOLNA_AGENT_ID;
@@ -61,6 +65,11 @@ export async function POST(request: NextRequest) {
   let count = 0;
 
   for (const patient of duePatients) {
+    if (hasPlaceholderPhone(patient.phone)) {
+      console.log("Skipping patient with no real phone number");
+      continue;
+    }
+
     try {
       const response = await fetch(BOLNA_CALL_URL, {
         method: "POST",
@@ -72,9 +81,9 @@ export async function POST(request: NextRequest) {
           agent_id: agentId,
           recipient_phone_number: patient.phone,
           user_data: {
-            patient_name: patient.name ?? "Patient",
-            family_name: "Beta",
-            medications: patient.medications ?? "",
+            patient_name: patient.name || "ji",
+            family_name: "aapke ghar walon",
+            medications: patient.medications || "apni dawai",
           },
         }),
       });
@@ -96,4 +105,12 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ triggered: count });
+}
+
+export async function GET(request: NextRequest) {
+  return handleTriggerReminder(request);
+}
+
+export async function POST(request: NextRequest) {
+  return handleTriggerReminder(request);
 }

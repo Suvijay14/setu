@@ -108,6 +108,62 @@ function parseReminderTimeFromTranscript(
   return undefined;
 }
 
+const NAME_FILLER_WORDS = new Set([
+  "kya",
+  "hai",
+  "hoon",
+  "main",
+  "mera",
+  "aap",
+  "ji",
+  "nahi",
+  "tha",
+  "thi",
+]);
+
+function capitalizeExtractedName(words: string[]): string {
+  return words
+    .map(
+      (word) =>
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+    )
+    .join(" ");
+}
+
+function extractPatientNameFromUserLines(userLines: string[]): string | null {
+  const namePatterns = [
+    /mera\s+naam\s+(.+?)\s+hai\b/i,
+    /naam\s+(.+?)\s+hai\b/i,
+    /मेरा\s+नाम\s+(.+?)\s+है/,
+    /नाम\s+(.+?)\s+है/,
+  ];
+
+  for (const line of userLines) {
+    const content = line.replace(/^user:\s*/i, "").trim();
+
+    for (const pattern of namePatterns) {
+      const match = content.match(pattern);
+      if (!match?.[1]) {
+        continue;
+      }
+
+      const rawName = match[1].replace(/[।.]+$/g, "").trim();
+      const words = rawName
+        .split(/\s+/)
+        .map((word) => word.trim())
+        .filter(Boolean)
+        .filter((word) => !NAME_FILLER_WORDS.has(word.toLowerCase()))
+        .slice(0, 3);
+
+      if (words.length >= 1 && words.length <= 3) {
+        return capitalizeExtractedName(words);
+      }
+    }
+  }
+
+  return null;
+}
+
 function extractFamilyPhone(transcript: string): string | undefined {
   const withCountry = transcript.match(/\+91[\s-]?[6-9]\d{9}\b/);
   if (withCountry) {
@@ -127,26 +183,15 @@ export function parseOnboardingCallTranscript(
 ): OnboardingExtract {
   const result: OnboardingExtract = {};
 
-  const namePatterns = [
-    /mera\s+naam\s+(.+?)(?:\s+hai\b|[\n\r]|$)/i,
-    /(?:^|\n)\s*user:\s*[^.\n]*naam\s+(.+?)(?:\s+hai\b|[\n\r]|$)/i,
-    /naam\s+(.+?)(?:\s+hai\b|[\n\r]|$)/i,
-    /मेरा\s+नाम\s+(.+?)(?:\s+है|[\n\r]|$)/,
-    /नाम\s+(.+?)(?:\s+है|[\n\r]|$)/,
-  ];
-
-  for (const pattern of namePatterns) {
-    const match = transcript.match(pattern);
-    if (match?.[1]) {
-      result.name = match[1].replace(/[।.]+$/g, "").trim();
-      break;
-    }
-  }
-
   const userLines = transcript
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => /^user:/i.test(line));
+
+  const extractedName = extractPatientNameFromUserLines(userLines);
+  if (extractedName) {
+    result.name = extractedName;
+  }
 
   const medicationLine = userLines.find((line) =>
     /BP|diabetes|dawai|davai|tablet|medicine|दवाई|दवा/i.test(line),
