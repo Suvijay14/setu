@@ -1,3 +1,9 @@
+-- Run in Supabase SQL editor:
+-- alter table call_logs add column if not exists mood text;
+-- alter table call_logs add column if not exists summary text;
+-- alter table call_logs add column if not exists emergency boolean default false;
+-- alter table call_logs add column if not exists sms_sent boolean default false;
+
 -- Setu Supabase schema (documentation)
 
 create table if not exists patients (
@@ -22,5 +28,9 @@ create table if not exists call_logs (
   concern text,
   transcript text,
   duration integer,
+  mood text,
+  summary text,
+  emergency boolean default false,
+  sms_sent boolean default false,
   created_at timestamptz not null default now()
 );

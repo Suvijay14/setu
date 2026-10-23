@@ -26,6 +26,10 @@ export interface CallLog {
   concern: string | null;
   transcript: string | null;
   duration: number | null;
+  mood: string | null;
+  summary: string | null;
+  emergency: boolean | null;
+  sms_sent: boolean | null;
   created_at: string;
 }
 

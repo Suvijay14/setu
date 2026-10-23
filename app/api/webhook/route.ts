@@ -208,6 +208,87 @@ Respond with ONLY the search term or null. Nothing else.`,
   }
 }
 
+async function extractCallSummary(
+  transcript: string,
+  medicationTaken: string | null,
+  actionRequired: string | null,
+): Promise<{
+  mood: string | null;
+  summary: string | null;
+  emergency: boolean;
+  sms_sent: boolean;
+} | null> {
+  if (!transcript) return null;
+  try {
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "qwen/qwen3.8-27b",
+          messages: [
+            {
+              role: "user",
+              content: `Analyze this Hindi voice call transcript between an elderly parent and Setu AI.
+
+Transcript:
+${transcript}
+
+Return ONLY valid JSON:
+{
+  "mood": "happy/neutral/sad/anxious/confused",
+  "summary": "one line in English describing what happened in the call",
+  "emergency": true/false,
+  "sms_sent": ${actionRequired === "yes" ? "true" : "false"}
+}
+
+mood: detect from patient's tone and words.
+summary: brief factual summary like "Ramesh confirmed taking BP tablet at 9pm."
+emergency: true only if patient mentioned chest pain, fall, breathing issue.`,
+            },
+          ],
+          max_tokens: 100,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      console.error("Groq call summary extract failed:", response.status);
+      return null;
+    }
+
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const content = data.choices?.[0]?.message?.content?.trim();
+    if (!content) return null;
+
+    const jsonText = content
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+
+    try {
+      return JSON.parse(jsonText) as {
+        mood: string | null;
+        summary: string | null;
+        emergency: boolean;
+        sms_sent: boolean;
+      };
+    } catch {
+      return null;
+    }
+  } catch (error) {
+    console.error("extractCallSummary error:", error);
+    return null;
+  }
+}
+
 async function lookupNearbyForPatient(
   patientPhone: string,
   searchQuery: string,
@@ -282,12 +363,15 @@ export async function POST(request: NextRequest) {
     const shouldRunOnboardingGroq = !existingPatientEarly?.onboarded;
     const groqEnabled = hasGroqApiKey();
 
-    const [onboardingData, locationQuery] = await Promise.all([
+    const [onboardingData, locationQuery, callSummary] = await Promise.all([
       shouldRunOnboardingGroq && groqEnabled
         ? extractOnboardingData(transcript)
         : Promise.resolve(null),
       groqEnabled
         ? extractLocationQuery(transcript)
+        : Promise.resolve(null),
+      groqEnabled
+        ? extractCallSummary(transcript, medication_taken, action_required)
         : Promise.resolve(null),
     ]);
 
@@ -357,6 +441,10 @@ export async function POST(request: NextRequest) {
       concern: patient_concern,
       transcript,
       duration,
+      mood: callSummary?.mood ?? null,
+      summary: callSummary?.summary ?? null,
+      emergency: callSummary?.emergency ?? false,
+      sms_sent: callSummary?.sms_sent ?? false,
     });
 
     if (insertError) {
