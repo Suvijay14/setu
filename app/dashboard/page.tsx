@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { CallLog } from "@/lib/types";
 import {
@@ -324,6 +325,15 @@ export default function DashboardPage() {
             View Dashboard
           </button>
         </form>
+
+        <p className="mt-6 text-sm">
+          <Link
+            href="/setup"
+            className="text-emerald-500 underline-offset-2 hover:text-emerald-400 hover:underline"
+          >
+            Register a new parent →
+          </Link>
+        </p>
       </div>
     </div>
   );

@@ -29,6 +29,18 @@ type WebhookBody = BolnaWebhookPayload & {
   metadata?: { from?: string; phone?: string };
 };
 
+function truncateSms(text: string, max = 160): string {
+  return text.slice(0, max);
+}
+
+function getIstTimeLabel(): string {
+  return new Date().toLocaleTimeString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function buildTransportSms(
   patientName: string,
   locationQuery: string,
@@ -36,29 +48,52 @@ function buildTransportSms(
 ): string {
   const hospitalShortName = placeName.split(",")[0].trim();
   const hospitalArea = placeName.split(",")[1]?.trim() || "";
-  const transportSms = `Setu: ${patientName} ne "${locationQuery}" ke baare mein pucha.\n${hospitalShortName}, ${hospitalArea}`;
-  return transportSms.slice(0, 160);
+  const transportSms = `📍 Setu
+${patientName} ko bahar jaana hai.
+Nazdik ${locationQuery}: ${hospitalShortName}
+${hospitalArea}`;
+  return truncateSms(transportSms);
 }
 
 function buildAlertSms(
+  patientName: string,
   status: string | undefined,
   medication_taken: MedicationTaken,
   action_required: YesNo,
   patient_concern: string | null,
 ): string {
+  const time = getIstTimeLabel();
+
   if (status === "no-answer") {
-    return "Aapki maa ne call nahi uthaya. Unhe call karein.".slice(0, 160);
+    return truncateSms(`⚠️ Setu Alert
+${patientName}
+Call nahi uthaya.
+Time: ${time}
+Unhe check karein.`);
   }
+
+  if (action_required === "yes") {
+    const concernText = patient_concern?.trim() || "Health concern reported.";
+    const concern = concernText.slice(0, 60);
+    return truncateSms(`🚨 Setu Emergency
+${patientName}
+"${concern}"
+ABHI call karein.`);
+  }
+
   if (medication_taken === "no") {
-    return "Aapki maa ne dawai nahi li. Unhe remind karein.".slice(0, 160);
+    return truncateSms(`⚠️ Setu Alert
+${patientName}
+Dawai nahi li aaj.
+Time: ${time}
+Unhe call karein.`);
   }
-  if (action_required === "yes" && patient_concern) {
-    return `Aapki maa ne kaha: ${patient_concern}. Unhe call karein.`.slice(
-      0,
-      160,
-    );
-  }
-  return "Aapki maa ne dawai nahi li. Unhe remind karein.".slice(0, 160);
+
+  return truncateSms(`⚠️ Setu Alert
+${patientName}
+Dawai nahi li aaj.
+Time: ${time}
+Unhe call karein.`);
 }
 
 function hasGroqApiKey(): boolean {
@@ -476,6 +511,7 @@ export async function POST(request: NextRequest) {
 
       const sendAlertSms = async () => {
         const alertBody = buildAlertSms(
+          patientName,
           status,
           medication_taken,
           action_required,
