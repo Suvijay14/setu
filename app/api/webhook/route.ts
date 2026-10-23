@@ -6,13 +6,14 @@ import {
   createOrUpdatePatient,
   getPatientByPhone,
 } from "@/lib/patient";
-import { analyzeCallTranscript } from "@/lib/analyzeCallTranscript";
+import {
+  analyzeCallTranscript,
+  getEmergencyConcernForSms,
+} from "@/lib/analyzeCallTranscript";
 import { searchNearby, type NearbyPlace } from "@/lib/nearbySearch";
 import type {
   BolnaWebhookPayload,
   GroqOnboardingExtract,
-  MedicationTaken,
-  YesNo,
 } from "@/lib/types";
 
 const twilioClient = twilio(
@@ -33,14 +34,6 @@ function truncateSms(text: string, max = 160): string {
   return text.slice(0, max);
 }
 
-function getIstTimeLabel(): string {
-  return new Date().toLocaleTimeString("en-IN", {
-    timeZone: "Asia/Kolkata",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 function buildTransportSms(
   patientName: string,
   locationQuery: string,
@@ -55,45 +48,25 @@ ${hospitalArea}`;
   return truncateSms(transportSms);
 }
 
-function buildAlertSms(
-  patientName: string,
-  status: string | undefined,
-  medication_taken: MedicationTaken,
-  action_required: YesNo,
-  patient_concern: string | null,
-): string {
-  const time = getIstTimeLabel();
-
-  if (status === "no-answer") {
-    return truncateSms(`⚠️ Setu Alert
+function buildNoAnswerSms(patientName: string): string {
+  return truncateSms(`⚠️ Setu Alert
 ${patientName}
 Call nahi uthaya.
-Time: ${time}
 Unhe check karein.`);
-  }
+}
 
-  if (action_required === "yes") {
-    const concernText = patient_concern?.trim() || "Health concern reported.";
-    const concern = concernText.slice(0, 60);
-    return truncateSms(`🚨 Setu Emergency
-${patientName}
-"${concern}"
-ABHI call karein.`);
-  }
-
-  if (medication_taken === "no") {
-    return truncateSms(`⚠️ Setu Alert
-${patientName}
-Dawai nahi li aaj.
-Time: ${time}
-Unhe call karein.`);
-  }
-
+function buildMedicationNotTakenSms(patientName: string): string {
   return truncateSms(`⚠️ Setu Alert
 ${patientName}
 Dawai nahi li aaj.
-Time: ${time}
 Unhe call karein.`);
+}
+
+function buildEmergencySms(patientName: string, concern: string): string {
+  return truncateSms(`🚨 Setu Emergency
+${patientName}
+${concern.slice(0, 80)}
+ABHI call karein.`);
 }
 
 function hasGroqApiKey(): boolean {
@@ -193,9 +166,14 @@ Return null if this is not an onboarding conversation.`,
   }
 }
 
+type LocationExtract = {
+  query: string;
+  location: string | null;
+};
+
 async function extractLocationQuery(
   transcript: string,
-): Promise<string | null> {
+): Promise<LocationExtract | null> {
   if (!transcript) return null;
 
   try {
@@ -216,12 +194,20 @@ async function extractLocationQuery(
 
 Transcript: ${transcript}
 
-Does the parent want to find or go somewhere nearby? If yes, extract what they are looking for as a simple English search term (e.g. "hospital", "pharmacy", "bank", "doctor", "police station").
-If no location search is needed, respond with null.
-Respond with ONLY the search term or null. Nothing else.`,
+Does the parent want to find or go somewhere nearby?
+
+Return ONLY valid JSON (or null if no location search is needed):
+{
+  "query": "simple English search term e.g. hospital, pharmacy, bank, doctor",
+  "current_location": "where they are right now if mentioned, e.g. Connaught Place Delhi, otherwise null"
+}
+
+current_location: if the patient mentions where they currently are (e.g. 'main abhi Connaught Place mein hoon'), extract that. Otherwise null.
+
+If no location search is needed, respond with null.`,
             },
           ],
-          max_tokens: 20,
+          max_tokens: 80,
         }),
       },
     );
@@ -234,9 +220,29 @@ Respond with ONLY the search term or null. Nothing else.`,
     const data = (await response.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
     };
-    const result = data.choices?.[0]?.message?.content?.trim();
-    if (!result || result.toLowerCase() === "null") return null;
-    return result;
+    const content = data.choices?.[0]?.message?.content?.trim();
+    if (!content || content.toLowerCase() === "null") return null;
+
+    const jsonText = content
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+
+    try {
+      const parsed = JSON.parse(jsonText) as {
+        query?: string | null;
+        current_location?: string | null;
+      };
+      const query = parsed.query?.trim();
+      if (!query) return null;
+
+      const currentLocation = parsed.current_location?.trim() || null;
+      return { query, location: currentLocation };
+    } catch {
+      if (jsonText.toLowerCase() === "null") return null;
+      return { query: jsonText, location: null };
+    }
   } catch (error) {
     console.error("extractLocationQuery error:", error);
     return null;
@@ -327,22 +333,34 @@ emergency: true only if patient mentioned chest pain, fall, breathing issue.`,
 async function lookupNearbyForPatient(
   patientPhone: string,
   searchQuery: string,
+  currentLocationFromTranscript: string | null,
 ): Promise<{
   places: NearbyPlace[];
   hospital: { name: string; address: string; lat: string; lon: string } | null;
+  searchOrigin: string | null;
 }> {
   try {
     const patientRecord = await getPatientByPhone(patientPhone);
-    const location = patientRecord?.location?.trim();
-    if (!location) {
-      return { places: [], hospital: null };
+    const searchOrigin =
+      currentLocationFromTranscript?.trim() ||
+      patientRecord?.location?.trim() ||
+      null;
+
+    if (!searchOrigin) {
+      return { places: [], hospital: null, searchOrigin: null };
     }
 
-    const places = await searchNearby(searchQuery, location);
+    console.log(
+      "NEARBY SEARCH ORIGIN:",
+      searchOrigin,
+      currentLocationFromTranscript ? "(from transcript)" : "(from patient record)",
+    );
+
+    const places = await searchNearby(searchQuery, searchOrigin);
     const first = places[0];
 
     if (!first?.name || !first.lat || !first.lon) {
-      return { places, hospital: null };
+      return { places, hospital: null, searchOrigin };
     }
 
     return {
@@ -353,10 +371,11 @@ async function lookupNearbyForPatient(
         lat: first.lat,
         lon: first.lon,
       },
+      searchOrigin,
     };
   } catch (error) {
     console.error("Failed to lookup nearby places:", error);
-    return { places: [], hospital: null };
+    return { places: [], hospital: null, searchOrigin: null };
   }
 }
 
@@ -398,7 +417,7 @@ export async function POST(request: NextRequest) {
     const shouldRunOnboardingGroq = !existingPatientEarly?.onboarded;
     const groqEnabled = hasGroqApiKey();
 
-    const [onboardingData, locationQuery, callSummary] = await Promise.all([
+    const [onboardingData, locationExtract, callSummary] = await Promise.all([
       shouldRunOnboardingGroq && groqEnabled
         ? extractOnboardingData(transcript)
         : Promise.resolve(null),
@@ -409,6 +428,9 @@ export async function POST(request: NextRequest) {
         ? extractCallSummary(transcript, medication_taken, action_required)
         : Promise.resolve(null),
     ]);
+
+    const locationQuery = locationExtract?.query ?? null;
+    const currentLocationFromTranscript = locationExtract?.location ?? null;
 
     console.log("ONBOARDING DATA:", onboardingData);
 
@@ -486,18 +508,19 @@ export async function POST(request: NextRequest) {
       console.error("Failed to insert call_logs row:", insertError);
     }
 
-    const needsAlert =
-      status === "no-answer" ||
-      action_required === "yes" ||
-      medication_taken === "no";
-
     const needsTransport = !!locationQuery;
+    const emergencyConcern = getEmergencyConcernForSms(transcript);
 
     console.log(
-      "NEEDS TRANSPORT:",
-      needsTransport,
-      "LOCATION QUERY:",
-      locationQuery,
+      "SMS PRIORITY CHECK:",
+      {
+        status,
+        medication_taken,
+        emergencyConcern,
+        needsTransport,
+        locationQuery,
+        currentLocationFromTranscript,
+      },
       "TRANSCRIPT SNIPPET:",
       transcript?.substring(0, 100),
     );
@@ -505,101 +528,49 @@ export async function POST(request: NextRequest) {
     const canSendSms =
       hasTwilioCredentials() && hasFamilyPhoneNumber(familySmsTo);
 
-    if ((needsAlert || needsTransport) && canSendSms) {
+    if (canSendSms) {
       const patientName = patient_name !== "Unknown" ? patient_name : "Unhe";
       const patientPhone = patient?.phone ?? caller_phone;
 
-      const sendAlertSms = async () => {
-        const alertBody = buildAlertSms(
-          patientName,
-          status,
-          medication_taken,
-          action_required,
-          patient_concern,
-        );
-        console.log("SMS BODY:", alertBody);
+      const sendSingleSms = async (body: string) => {
+        console.log("SMS BODY:", body);
         await twilioClient.messages.create({
-          body: alertBody,
+          body,
           from: process.env.TWILIO_FROM_NUMBER!,
           to: familySmsTo,
         });
-        console.log("SMS alert sent to family");
+        console.log("SMS sent to family");
       };
 
-      const runNearbyLookup = async () => {
-        console.log("CALLING NEARBY SEARCH...");
-        return lookupNearbyForPatient(patientPhone!, locationQuery!);
-      };
-
-      if (
-        needsAlert &&
-        needsTransport &&
-        locationQuery &&
-        patientPhone
-      ) {
-        const [alertResult, nearbyResult] = await Promise.allSettled([
-          sendAlertSms(),
-          runNearbyLookup(),
-        ]);
-
-        if (alertResult.status === "rejected") {
-          console.error("Failed to send SMS alert:", alertResult.reason);
-        }
-
-        if (nearbyResult.status === "rejected") {
-          console.error("Nearby lookup failed:", nearbyResult.reason);
-        } else {
+      try {
+        if (status === "no-answer") {
+          await sendSingleSms(buildNoAnswerSms(patientName));
+        } else if (medication_taken === "no") {
+          await sendSingleSms(buildMedicationNotTakenSms(patientName));
+        } else if (emergencyConcern) {
+          await sendSingleSms(
+            buildEmergencySms(patientName, emergencyConcern),
+          );
+        } else if (needsTransport && locationQuery && patientPhone) {
+          console.log("CALLING NEARBY SEARCH...");
+          const { places, hospital, searchOrigin } =
+            await lookupNearbyForPatient(
+              patientPhone,
+              locationQuery,
+              currentLocationFromTranscript,
+            );
           console.log(
             "NEARBY RESULT:",
-            JSON.stringify({ places: nearbyResult.value.places }),
+            JSON.stringify({ searchOrigin, places }),
           );
-          const hospital = nearbyResult.value.hospital;
           if (hospital) {
-            const transportBody = buildTransportSms(
-              patientName,
-              locationQuery,
-              hospital.name,
+            await sendSingleSms(
+              buildTransportSms(patientName, locationQuery, hospital.name),
             );
-            console.log("SMS BODY:", transportBody);
-            try {
-              await twilioClient.messages.create({
-                body: transportBody,
-                from: process.env.TWILIO_FROM_NUMBER!,
-                to: familySmsTo,
-              });
-              console.log("SMS alert sent to family");
-            } catch (error) {
-              console.error("Failed to send SMS alert:", error);
-            }
           }
         }
-      } else if (needsAlert) {
-        try {
-          await sendAlertSms();
-        } catch (error) {
-          console.error("Failed to send SMS alert:", error);
-        }
-      } else if (needsTransport && locationQuery && patientPhone) {
-        try {
-          const { places, hospital } = await runNearbyLookup();
-          console.log("NEARBY RESULT:", JSON.stringify({ places }));
-          if (hospital) {
-            const transportBody = buildTransportSms(
-              patientName,
-              locationQuery,
-              hospital.name,
-            );
-            console.log("SMS BODY:", transportBody);
-            await twilioClient.messages.create({
-              body: transportBody,
-              from: process.env.TWILIO_FROM_NUMBER!,
-              to: familySmsTo,
-            });
-            console.log("SMS alert sent to family");
-          }
-        } catch (error) {
-          console.error("Failed to send transport SMS:", error);
-        }
+      } catch (error) {
+        console.error("Failed to send SMS:", error);
       }
     }
 

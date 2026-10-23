@@ -22,6 +22,9 @@ const MEDICATION_YES_PATTERNS = [
 const HEALTH_COMPLAINT_PATTERN =
   /dard|pain|gir|fell|emergency|tabiyat\s+theek\s+nahi|बीमार|दर्द|गिर|theek\s+nahi|bimar|tabiyat/i;
 
+const SMS_EMERGENCY_PATTERN =
+  /dard|chest pain|seene mein|gir gaya|gir gayi|saans nahi|behosh|दर्द|गिर/i;
+
 function getUserTranscriptText(transcript: string): string {
   return transcript
     .split("\n")
@@ -66,6 +69,23 @@ export function parseActionRequiredFromTranscript(
   }
 
   return "no";
+}
+
+export function getEmergencyConcernForSms(transcript: string): string | null {
+  const userLines = transcript
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => /^user:/i.test(line))
+    .map((line) => line.replace(/^user:\s*/i, "").trim())
+    .filter(Boolean);
+
+  for (const line of userLines) {
+    if (SMS_EMERGENCY_PATTERN.test(line)) {
+      return line.slice(0, 80);
+    }
+  }
+
+  return null;
 }
 
 export function parsePatientConcernFromTranscript(
