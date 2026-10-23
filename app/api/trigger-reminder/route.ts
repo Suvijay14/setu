@@ -29,6 +29,41 @@ function hasPlaceholderPhone(phone: string): boolean {
   return phone.startsWith("onboarding_") || phone.startsWith("temp_");
 }
 
+async function triggerBolnaCall(
+  apiKey: string,
+  agentId: string,
+  patient: Patient,
+): Promise<boolean> {
+  const response = await fetch(BOLNA_CALL_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      agent_id: agentId,
+      recipient_phone_number: patient.phone,
+      user_data: {
+        patient_name: patient.name || "ji",
+        family_name: "aapke ghar walon",
+        medications: patient.medications || "apni dawai",
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    console.error(
+      `Bolna call failed for ${patient.phone}:`,
+      response.status,
+      errorBody,
+    );
+    return false;
+  }
+
+  return true;
+}
+
 async function handleTriggerReminder(request: NextRequest) {
   const force = request.nextUrl.searchParams.get("force") === "true";
   const apiKey = process.env.BOLNA_API_KEY;
@@ -62,45 +97,29 @@ async function handleTriggerReminder(request: NextRequest) {
         return normalized === getCurrentTimeIST();
       });
 
-  let count = 0;
+  const callablePatients = duePatients.filter(
+    (patient) => !hasPlaceholderPhone(patient.phone),
+  );
 
   for (const patient of duePatients) {
     if (hasPlaceholderPhone(patient.phone)) {
       console.log("Skipping patient with no real phone number");
-      continue;
     }
+  }
 
-    try {
-      const response = await fetch(BOLNA_CALL_URL, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          agent_id: agentId,
-          recipient_phone_number: patient.phone,
-          user_data: {
-            patient_name: patient.name || "ji",
-            family_name: "aapke ghar walon",
-            medications: patient.medications || "apni dawai",
-          },
-        }),
-      });
+  const results = await Promise.allSettled(
+    callablePatients.map((patient) =>
+      triggerBolnaCall(apiKey, agentId, patient),
+    ),
+  );
 
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error(
-          `Bolna call failed for ${patient.phone}:`,
-          response.status,
-          errorBody,
-        );
-        continue;
-      }
+  const count = results.filter(
+    (result) => result.status === "fulfilled" && result.value === true,
+  ).length;
 
-      count += 1;
-    } catch (err) {
-      console.error(`Error triggering call for ${patient.phone}:`, err);
+  for (const result of results) {
+    if (result.status === "rejected") {
+      console.error("Error triggering call:", result.reason);
     }
   }
 

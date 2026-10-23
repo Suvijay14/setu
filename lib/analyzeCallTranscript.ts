@@ -22,17 +22,28 @@ const MEDICATION_YES_PATTERNS = [
 const HEALTH_COMPLAINT_PATTERN =
   /dard|pain|gir|fell|emergency|tabiyat\s+theek\s+nahi|बीमार|दर्द|गिर|theek\s+nahi|bimar|tabiyat/i;
 
+function getUserTranscriptText(transcript: string): string {
+  return transcript
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => /^user:/i.test(line))
+    .map((line) => line.replace(/^user:\s*/i, "").trim())
+    .join("\n");
+}
+
 export function parseMedicationTakenFromTranscript(
   transcript: string,
 ): MedicationTaken {
+  const userText = getUserTranscriptText(transcript);
+
   for (const pattern of MEDICATION_NO_PATTERNS) {
-    if (pattern.test(transcript)) {
+    if (pattern.test(userText)) {
       return "no";
     }
   }
 
   for (const pattern of MEDICATION_YES_PATTERNS) {
-    if (pattern.test(transcript)) {
+    if (pattern.test(userText)) {
       return "yes";
     }
   }
@@ -48,7 +59,9 @@ export function parseActionRequiredFromTranscript(
     return "yes";
   }
 
-  if (HEALTH_COMPLAINT_PATTERN.test(transcript)) {
+  const userText = getUserTranscriptText(transcript);
+
+  if (HEALTH_COMPLAINT_PATTERN.test(userText)) {
     return "yes";
   }
 

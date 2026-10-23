@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import type { GroqOnboardingExtract } from "@/lib/types";
 
 export interface Patient {
   phone: string;
@@ -25,6 +26,21 @@ export interface OnboardingExtract {
   reminder_time?: string;
   family_phone?: string;
   location?: string;
+}
+
+export function buildGroqOnboardingUpsert(
+  data: GroqOnboardingExtract,
+): PatientUpdateData {
+  const onboarded = !!(data.name && data.reminder_time);
+
+  return {
+    ...(data.name ? { name: data.name } : {}),
+    ...(data.medications ? { medications: data.medications } : {}),
+    ...(data.reminder_time ? { reminder_time: data.reminder_time } : {}),
+    family_phone: data.family_phone ?? process.env.FAMILY_PHONE_NUMBER,
+    ...(data.location ? { location: data.location } : {}),
+    onboarded,
+  };
 }
 
 export async function getPatientByPhone(

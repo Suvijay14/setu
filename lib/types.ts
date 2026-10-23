@@ -28,3 +28,11 @@ export interface CallLog {
   duration: number | null;
   created_at: string;
 }
+
+export type GroqOnboardingExtract = {
+  name: string | null;
+  medications: string | null;
+  reminder_time: string | null;
+  family_phone: string | null;
+  location: string | null;
+};
