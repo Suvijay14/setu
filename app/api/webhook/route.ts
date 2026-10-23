@@ -24,6 +24,84 @@ type WebhookBody = BolnaWebhookPayload & {
   metadata?: { from?: string; phone?: string };
 };
 
+function hospitalShortName(name: string): string {
+  return name.split(",")[0]?.trim() || name;
+}
+
+function buildTransportSms(hospitalName: string, shortUrl: string): string {
+  const hospitalShort = hospitalShortName(hospitalName);
+  return `Hospital: ${hospitalShort}. Uber: ${shortUrl}`.slice(0, 160);
+}
+
+function buildAlertSms(patientName: string): string {
+  return `Setu: ${patientName} ne dawai nahi li. Unhe call karein.`.slice(
+    0,
+    160,
+  );
+}
+
+function buildUberDeepLink(place: {
+  name: string;
+  lat: string;
+  lon: string;
+}): string {
+  return `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[latitude]=${place.lat}&dropoff[longitude]=${place.lon}&dropoff[nickname]=${encodeURIComponent(place.name.split(",")[0])}`;
+}
+
+async function fetchNearbyHospital(
+  origin: string,
+  patientPhone: string,
+): Promise<{
+  nearbyResult: unknown;
+  hospital: { name: string; address: string; lat: string; lon: string } | null;
+}> {
+  try {
+    const response = await fetch(`${origin}/api/tools/nearby`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: "hospital",
+        patient_phone: patientPhone,
+      }),
+    });
+
+    const nearbyResult = await response.json();
+
+    if (!response.ok) {
+      console.error("Nearby hospitals request failed:", response.status);
+      return { nearbyResult, hospital: null };
+    }
+
+    const first = (
+      nearbyResult as {
+        places?: Array<{
+          name?: string;
+          address?: string;
+          lat?: string;
+          lon?: string;
+        }>;
+      }
+    ).places?.[0];
+
+    if (!first?.name || !first.lat || !first.lon) {
+      return { nearbyResult, hospital: null };
+    }
+
+    return {
+      nearbyResult,
+      hospital: {
+        name: first.name,
+        address: first.address ?? "",
+        lat: first.lat,
+        lon: first.lon,
+      },
+    };
+  } catch (error) {
+    console.error("Failed to fetch nearby hospitals:", error);
+    return { nearbyResult: null, hospital: null };
+  }
+}
+
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as WebhookBody;
 
@@ -158,25 +236,67 @@ export async function POST(request: NextRequest) {
     action_required === "yes" ||
     medication_taken === "no";
 
-  if (needsAlert) {
-    const patientLabel =
-      patient_name !== "Unknown" ? patient_name : "Your parent";
-    let reason = "needs your attention.";
-    if (status === "no-answer")
-      reason = "did not answer the medication reminder call.";
-    else if (medication_taken === "no")
-      reason = "has not taken their medication.";
-    else if (patient_concern) reason = patient_concern;
+  const needsTransport = !!(
+    transcript &&
+    /doctor|hospital|jaana hai|jaana tha|le chalo|ले जाओ|जाना है|doctor ke paas/i.test(
+      transcript,
+    )
+  );
+  console.log(
+    "NEEDS TRANSPORT:",
+    needsTransport,
+    "TRANSCRIPT SNIPPET:",
+    transcript?.substring(0, 100),
+  );
 
-    try {
-      await twilioClient.messages.create({
-        body: `Setu alert: ${patientLabel} ${reason} Please call them.`,
-        from: process.env.TWILIO_FROM_NUMBER!,
-        to: familySmsTo,
-      });
-      console.log("SMS alert sent to family");
-    } catch (error) {
-      console.error("Failed to send SMS alert:", error);
+  if (needsAlert || needsTransport) {
+    const patientName = patient_name !== "Unknown" ? patient_name : "Unhe";
+
+    if (needsAlert) {
+      const alertBody = buildAlertSms(patientName);
+      console.log("SMS BODY:", alertBody);
+      try {
+        await twilioClient.messages.create({
+          body: alertBody,
+          from: process.env.TWILIO_FROM_NUMBER!,
+          to: familySmsTo,
+        });
+        console.log("SMS alert sent to family");
+      } catch (error) {
+        console.error("Failed to send SMS alert:", error);
+      }
+    }
+
+    if (needsTransport) {
+      const patientPhone = patient?.phone ?? caller_phone;
+      if (patientPhone) {
+        console.log("CALLING NEARBY API...");
+        const { nearbyResult, hospital } = await fetchNearbyHospital(
+          request.nextUrl.origin,
+          patientPhone,
+        );
+        console.log("NEARBY RESULT:", JSON.stringify(nearbyResult));
+        if (hospital) {
+          const uberLink = buildUberDeepLink(hospital);
+          const shortUrl = await fetch(
+            `https://tinyurl.com/api-create.php?url=${encodeURIComponent(uberLink)}`,
+          )
+            .then((r) => r.text())
+            .catch(() => uberLink);
+          const transportBody = buildTransportSms(hospital.name, shortUrl);
+          console.log("SMS BODY:", transportBody);
+          try {
+            await twilioClient.messages.create({
+              body: transportBody,
+              from: process.env.TWILIO_FROM_NUMBER!,
+              to: familySmsTo,
+            });
+            console.log("SMS alert sent to family");
+          } catch (error) {
+            console.error("Failed to send SMS alert:", error);
+          }
+        }
+      }
     }
   }
 

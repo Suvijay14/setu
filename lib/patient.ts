@@ -6,6 +6,7 @@ export interface Patient {
   medications: string | null;
   reminder_time: string | null;
   family_phone: string | null;
+  location: string | null;
   onboarded: boolean;
 }
 
@@ -14,6 +15,7 @@ export type PatientUpdateData = Partial<{
   medications: string;
   reminder_time: string;
   family_phone: string;
+  location: string;
   onboarded: boolean;
 }>;
 
@@ -22,6 +24,7 @@ export interface OnboardingExtract {
   medications?: string;
   reminder_time?: string;
   family_phone?: string;
+  location?: string;
 }
 
 export async function getPatientByPhone(
@@ -164,6 +167,62 @@ function extractPatientNameFromUserLines(userLines: string[]): string | null {
   return null;
 }
 
+function normalizeLocation(raw: string): string {
+  return raw
+    .replace(/[।.]+$/g, "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function extractLocationFromUserLines(userLines: string[]): string | null {
+  const locationPatterns = [
+    /mera\s+area\s+(.+?)(?:\s+hai\b|[,.]|$)/i,
+    /\bmain\s+(.+?)\s+(?:mein|rehta|rehti)\b/i,
+    /(.+?)\s+mein\s+reht[ei]\s+hoon/i,
+    /reht[ei]\s+hoon\s+(.+?)(?:\s+mein\b)?(?:[,.]|$)/i,
+    /([A-Za-z\u0900-\u097F][A-Za-z\u0900-\u097F\s-]{1,40})\s+mein\b/i,
+  ];
+
+  const foundParts: string[] = [];
+
+  for (const line of userLines) {
+    const content = line.replace(/^user:\s*/i, "").trim();
+
+    for (const pattern of locationPatterns) {
+      const match = content.match(pattern);
+      if (!match?.[1]) {
+        continue;
+      }
+
+      const place = normalizeLocation(match[1]);
+      if (place.length >= 2 && !foundParts.includes(place)) {
+        foundParts.push(place);
+      }
+    }
+  }
+
+  if (foundParts.length === 0) {
+    return null;
+  }
+
+  if (foundParts.length === 1) {
+    return foundParts[0];
+  }
+
+  const cityMatch = foundParts.find((part) =>
+    /^(Delhi|Mumbai|Bengaluru|Bangalore|Chennai|Kolkata|Hyderabad|Pune|Jaipur|Noida|Gurgaon|Gurugram)$/i.test(
+      part,
+    ),
+  );
+  const areaMatch = foundParts.find((part) => part !== cityMatch);
+
+  if (areaMatch && cityMatch) {
+    return `${areaMatch} ${cityMatch}`;
+  }
+
+  return foundParts.slice(0, 2).join(" ");
+}
+
 function extractFamilyPhone(transcript: string): string | undefined {
   const withCountry = transcript.match(/\+91[\s-]?[6-9]\d{9}\b/);
   if (withCountry) {
@@ -217,6 +276,11 @@ export function parseOnboardingCallTranscript(
 
   result.reminder_time = parseReminderTimeFromTranscript(transcript);
   result.family_phone = extractFamilyPhone(transcript);
+
+  const extractedLocation = extractLocationFromUserLines(userLines);
+  if (extractedLocation) {
+    result.location = extractedLocation;
+  }
 
   return result;
 }
