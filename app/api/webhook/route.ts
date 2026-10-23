@@ -102,7 +102,7 @@ async function extractOnboardingData(
           Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: "qwen/qwen3.8-27b",
           messages: [
             {
               role: "user",
@@ -173,7 +173,7 @@ async function extractLocationQuery(
           Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: "qwen/qwen3.8-27b",
           messages: [
             {
               role: "user",
