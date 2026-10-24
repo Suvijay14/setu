@@ -9,6 +9,13 @@ export interface Patient {
   family_phone: string | null;
   location: string | null;
   onboarded: boolean;
+  last_call_notes: string | null;
+  call_streak: number | null;
+  family_message: string | null;
+  family_message_sent: boolean | null;
+  child_summary_frequency: string | null;
+  child_summary_time: string | null;
+  last_summary_sent_at: string | null;
 }
 
 export type PatientUpdateData = Partial<{
@@ -18,6 +25,11 @@ export type PatientUpdateData = Partial<{
   family_phone: string;
   location: string;
   onboarded: boolean;
+  last_call_notes: string;
+  call_streak: number;
+  child_summary_frequency: string;
+  child_summary_time: string;
+  last_summary_sent_at: string;
 }>;
 
 export interface OnboardingExtract {

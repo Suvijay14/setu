@@ -1,3 +1,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    @apply bg-surface-base text-on-surface;
+  }
+
+  body {
+    @apply min-h-screen bg-surface-base font-sans text-on-surface antialiased;
+  }
+}
+
+@layer utilities {
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}

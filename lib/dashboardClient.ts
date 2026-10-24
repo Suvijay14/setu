@@ -7,6 +7,8 @@ export type DashboardPatient = {
   medications: string | null;
   reminder_time: string | null;
   onboarded: boolean;
+  child_summary_frequency: string | null;
+  child_summary_time: string | null;
 };
 
 export type DashboardApiSuccess = {

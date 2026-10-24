@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   const { data: patient, error: patientError } = await supabase
     .from("patients")
     .select(
-      "phone, name, location, medications, reminder_time, onboarded, family_phone",
+      "phone, name, location, medications, reminder_time, onboarded, family_phone, child_summary_frequency, child_summary_time",
     )
     .eq("family_phone", familyPhone)
     .limit(1)
@@ -65,6 +65,8 @@ export async function GET(request: NextRequest) {
       medications: patient.medications ?? null,
       reminder_time: patient.reminder_time ?? null,
       onboarded: patient.onboarded ?? false,
+      child_summary_frequency: patient.child_summary_frequency ?? "daily",
+      child_summary_time: patient.child_summary_time ?? "20:00",
     },
     calls,
   });

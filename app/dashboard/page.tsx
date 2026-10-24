@@ -13,6 +13,25 @@ import {
   type DashboardPatient,
 } from "@/lib/dashboardClient";
 
+const SUMMARY_TIME_OPTIONS = [
+  "18:00",
+  "18:30",
+  "19:00",
+  "19:30",
+  "20:00",
+  "20:30",
+  "21:00",
+  "21:30",
+  "22:00",
+] as const;
+
+const SUMMARY_FREQUENCY_OPTIONS = [
+  { label: "Daily", value: "daily" },
+  { label: "Every 2 days", value: "every2days" },
+  { label: "Weekly", value: "weekly" },
+  { label: "Never", value: "never" },
+] as const;
+
 type ViewState =
   | { kind: "login" }
   | { kind: "loading" }
@@ -48,9 +67,22 @@ export default function DashboardPage() {
   const [phoneInput, setPhoneInput] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [view, setView] = useState<ViewState>({ kind: "loading" });
+  const [familyMessage, setFamilyMessage] = useState("");
+  const [messageSending, setMessageSending] = useState(false);
+  const [messageSuccess, setMessageSuccess] = useState(false);
+  const [messageError, setMessageError] = useState<string | null>(null);
+  const [summaryFrequency, setSummaryFrequency] = useState("daily");
+  const [summaryTime, setSummaryTime] = useState("20:00");
+  const [summarySaving, setSummarySaving] = useState(false);
+  const [summarySaveError, setSummarySaveError] = useState<string | null>(null);
+  const [summarySaveSuccess, setSummarySaveSuccess] = useState(false);
 
   const openDashboard = useCallback(
     (familyPhone: string, data: DashboardApiSuccess) => {
+      setSummaryFrequency(data.patient.child_summary_frequency ?? "daily");
+      setSummaryTime(data.patient.child_summary_time ?? "20:00");
+      setSummarySaveSuccess(false);
+      setSummarySaveError(null);
       setView({
         kind: "dashboard",
         familyPhone,
@@ -138,7 +170,97 @@ export default function DashboardPage() {
     localStorage.removeItem(FAMILY_PHONE_STORAGE_KEY);
     setPhoneInput("");
     setSubmitError(null);
+    setFamilyMessage("");
+    setMessageSuccess(false);
+    setMessageError(null);
     setView({ kind: "login" });
+  };
+
+  const handleSaveSummarySettings = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (view.kind !== "dashboard") return;
+
+    setSummarySaving(true);
+    setSummarySaveError(null);
+    setSummarySaveSuccess(false);
+
+    try {
+      const response = await fetch("/api/update-summary-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          family_phone: view.familyPhone,
+          frequency: summaryFrequency,
+          time: summaryTime,
+        }),
+      });
+      const body = (await response.json()) as {
+        success?: boolean;
+        error?: string;
+      };
+
+      if (!response.ok || !body.success) {
+        setSummarySaveError(body.error ?? "Failed to save settings.");
+        return;
+      }
+
+      setSummarySaveSuccess(true);
+      setView({
+        ...view,
+        patient: {
+          ...view.patient,
+          child_summary_frequency: summaryFrequency,
+          child_summary_time: summaryTime,
+        },
+      });
+    } catch {
+      setSummarySaveError("Failed to save settings.");
+    } finally {
+      setSummarySaving(false);
+    }
+  };
+
+  const handleSendFamilyMessage = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (view.kind !== "dashboard") return;
+
+    const trimmed = familyMessage.trim();
+    if (!trimmed) {
+      setMessageError("Enter a message to send.");
+      setMessageSuccess(false);
+      return;
+    }
+
+    setMessageSending(true);
+    setMessageError(null);
+    setMessageSuccess(false);
+
+    try {
+      const response = await fetch("/api/family-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          family_phone: view.familyPhone,
+          message: trimmed,
+        }),
+      });
+      const body = (await response.json()) as {
+        success?: boolean;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        setMessageError(body.error ?? "Failed to send message.");
+        return;
+      }
+
+      setFamilyMessage("");
+      setMessageSuccess(true);
+    } catch {
+      setMessageError("Failed to send message.");
+    } finally {
+      setMessageSending(false);
+    }
   };
 
   if (view.kind === "loading") {
@@ -282,6 +404,128 @@ export default function DashboardPage() {
               </table>
             </div>
           </div>
+
+          <section className="mt-8 rounded-xl border border-zinc-800 bg-zinc-900/80 p-6">
+            <h2 className="text-lg font-semibold text-white">
+              Send a message to {patientName}
+            </h2>
+            <form onSubmit={handleSendFamilyMessage} className="mt-4 space-y-4">
+              <label className="block">
+                <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Type a message for Setu to deliver on the next call
+                </span>
+                <input
+                  type="text"
+                  value={familyMessage}
+                  onChange={(e) => {
+                    setFamilyMessage(e.target.value);
+                    setMessageSuccess(false);
+                    setMessageError(null);
+                  }}
+                  placeholder="Beta, kal doctor ke paas jana hai"
+                  disabled={messageSending}
+                  className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600 disabled:opacity-60"
+                />
+              </label>
+
+              {messageError ? (
+                <p className="text-sm text-red-400" role="alert">
+                  {messageError}
+                </p>
+              ) : null}
+
+              {messageSuccess ? (
+                <p className="text-sm text-emerald-400">
+                  Message will be delivered on the next call ✓
+                </p>
+              ) : null}
+
+              <button
+                type="submit"
+                disabled={messageSending}
+                className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {messageSending ? "Sending…" : "Send Message"}
+              </button>
+            </form>
+          </section>
+
+          <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/80 p-6">
+            <h2 className="text-lg font-semibold text-white">
+              Parent Update Call
+            </h2>
+            <p className="mt-2 text-sm text-zinc-400">
+              Setu will call you with a voice summary of your parent&apos;s day
+            </p>
+            <form
+              onSubmit={handleSaveSummarySettings}
+              className="mt-4 grid gap-4 sm:grid-cols-2"
+            >
+              <label className="block">
+                <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Frequency
+                </span>
+                <select
+                  value={summaryFrequency}
+                  onChange={(e) => {
+                    setSummaryFrequency(e.target.value);
+                    setSummarySaveSuccess(false);
+                    setSummarySaveError(null);
+                  }}
+                  className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                >
+                  {SUMMARY_FREQUENCY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Time (IST)
+                </span>
+                <select
+                  value={summaryTime}
+                  onChange={(e) => {
+                    setSummaryTime(e.target.value);
+                    setSummarySaveSuccess(false);
+                    setSummarySaveError(null);
+                  }}
+                  className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                >
+                  {SUMMARY_TIME_OPTIONS.map((time) => (
+                    <option key={time} value={time}>
+                      {time}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {summarySaveError ? (
+                <p className="text-sm text-red-400 sm:col-span-2" role="alert">
+                  {summarySaveError}
+                </p>
+              ) : null}
+
+              {summarySaveSuccess ? (
+                <p className="text-sm text-emerald-400 sm:col-span-2">
+                  Summary call settings saved ✓
+                </p>
+              ) : null}
+
+              <div className="sm:col-span-2">
+                <button
+                  type="submit"
+                  disabled={summarySaving}
+                  className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {summarySaving ? "Saving…" : "Save"}
+                </button>
+              </div>
+            </form>
+          </section>
         </div>
       </div>
     );

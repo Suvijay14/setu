@@ -1,4 +1,11 @@
 -- Run in Supabase SQL editor:
+-- alter table patients add column if not exists child_summary_frequency text default 'daily';
+-- alter table patients add column if not exists child_summary_time text default '20:00';
+-- alter table patients add column if not exists last_summary_sent_at timestamptz;
+-- alter table patients add column if not exists family_message text;
+-- alter table patients add column if not exists family_message_sent boolean default false;
+-- alter table patients add column if not exists last_call_notes text;
+-- alter table patients add column if not exists call_streak integer default 0;
 -- alter table call_logs add column if not exists mood text;
 -- alter table call_logs add column if not exists summary text;
 -- alter table call_logs add column if not exists emergency boolean default false;
@@ -15,6 +22,13 @@ create table if not exists patients (
   family_phone text,
   onboarded boolean not null default false,
   location text,
+  last_call_notes text,
+  call_streak integer not null default 0,
+  family_message text,
+  family_message_sent boolean not null default false,
+  child_summary_frequency text not null default 'daily',
+  child_summary_time text not null default '20:00',
+  last_summary_sent_at timestamptz,
   created_at timestamptz not null default now()
 );
 

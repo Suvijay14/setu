@@ -1,3 +1,5 @@
+// Variables available in Bolna: patient_name, medications, last_call_notes, call_streak
+
 import { NextRequest, NextResponse } from "next/server";
 import twilio from "twilio";
 import { supabase } from "@/lib/supabase";
@@ -330,6 +332,64 @@ emergency: true only if patient mentioned chest pain, fall, breathing issue.`,
   }
 }
 
+async function extractMemoryNotes(
+  transcript: string,
+  concern: string | null,
+): Promise<string | null> {
+  if (!transcript) return null;
+
+  try {
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "qwen/qwen3.8-27b",
+          messages: [
+            {
+              role: "user",
+              content: `From this Hindi call transcript, extract what Setu should remember for the NEXT call.
+
+Transcript: ${transcript}
+${concern ? `Known concern from this call: ${concern}` : ""}
+
+Extract in this format (one line each, skip if not mentioned):
+- Pain or health issue: [what they mentioned]
+- Mood: [how they seemed]
+- Family news: [anything about family]
+- Request: [anything they asked for or wanted]
+- Other: [anything else worth remembering]
+
+Return ONLY the relevant lines. If nothing notable, return null.
+Keep it under 100 words total.`,
+            },
+          ],
+          max_tokens: 150,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      console.error("Groq memory notes extract failed:", response.status);
+      return null;
+    }
+
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const content = data.choices?.[0]?.message?.content?.trim();
+    if (!content || content.toLowerCase() === "null") return null;
+    return content;
+  } catch (error) {
+    console.error("extractMemoryNotes error:", error);
+    return null;
+  }
+}
+
 async function lookupNearbyForPatient(
   patientPhone: string,
   searchQuery: string,
@@ -417,17 +477,21 @@ export async function POST(request: NextRequest) {
     const shouldRunOnboardingGroq = !existingPatientEarly?.onboarded;
     const groqEnabled = hasGroqApiKey();
 
-    const [onboardingData, locationExtract, callSummary] = await Promise.all([
-      shouldRunOnboardingGroq && groqEnabled
-        ? extractOnboardingData(transcript)
-        : Promise.resolve(null),
-      groqEnabled
-        ? extractLocationQuery(transcript)
-        : Promise.resolve(null),
-      groqEnabled
-        ? extractCallSummary(transcript, medication_taken, action_required)
-        : Promise.resolve(null),
-    ]);
+    const [onboardingData, locationExtract, callSummary, memoryNotes] =
+      await Promise.all([
+        shouldRunOnboardingGroq && groqEnabled
+          ? extractOnboardingData(transcript)
+          : Promise.resolve(null),
+        groqEnabled
+          ? extractLocationQuery(transcript)
+          : Promise.resolve(null),
+        groqEnabled
+          ? extractCallSummary(transcript, medication_taken, action_required)
+          : Promise.resolve(null),
+        groqEnabled
+          ? extractMemoryNotes(transcript, patient_concern)
+          : Promise.resolve(null),
+      ]);
 
     const locationQuery = locationExtract?.query ?? null;
     const currentLocationFromTranscript = locationExtract?.location ?? null;
@@ -506,6 +570,47 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error("Failed to insert call_logs row:", insertError);
+    }
+
+    const patientPhoneKey = patient?.phone ?? caller_phone;
+    if (
+      patientPhoneKey &&
+      !patientPhoneKey.startsWith("temp_") &&
+      !patientPhoneKey.startsWith("onboarding_")
+    ) {
+      const previousStreak = patient?.call_streak ?? 0;
+      let call_streak = previousStreak;
+      if (medication_taken === "yes") {
+        call_streak = previousStreak + 1;
+      } else if (medication_taken === "no") {
+        call_streak = 0;
+      }
+
+      const memoryUpdate: {
+        last_call_notes?: string;
+        call_streak?: number;
+      } = {};
+
+      if (memoryNotes) {
+        memoryUpdate.last_call_notes = memoryNotes;
+      }
+      if (medication_taken === "yes" || medication_taken === "no") {
+        memoryUpdate.call_streak = call_streak;
+      }
+
+      if (Object.keys(memoryUpdate).length > 0) {
+        const updatedPatient = await createOrUpdatePatient(
+          patientPhoneKey,
+          memoryUpdate,
+        );
+        if (updatedPatient) {
+          patient = updatedPatient;
+        }
+        console.log("PATIENT MEMORY UPDATED:", {
+          phone: patientPhoneKey,
+          ...memoryUpdate,
+        });
+      }
     }
 
     const needsTransport = !!locationQuery;

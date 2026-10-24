@@ -3,6 +3,10 @@
     {
       "path": "/api/trigger-reminder",
       "schedule": "30 15 * * *"
+    },
+    {
+      "path": "/api/summary-call",
+      "schedule": "45 * * * *"
     }
   ]
 }

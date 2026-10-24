@@ -47,6 +47,9 @@ async function triggerBolnaCall(
         patient_name: patient.name || "ji",
         family_name: "aapke ghar walon",
         medications: patient.medications || "apni dawai",
+        last_call_notes: patient.last_call_notes || "",
+        call_streak: patient.call_streak?.toString() || "0",
+        family_message: patient.family_message || "",
       },
     }),
   });
@@ -61,7 +64,78 @@ async function triggerBolnaCall(
     return false;
   }
 
+  const { error: clearError } = await supabase
+    .from("patients")
+    .update({
+      family_message_sent: true,
+      family_message: null,
+    })
+    .eq("phone", patient.phone);
+
+  if (clearError) {
+    console.error(
+      `Failed to mark family message sent for ${patient.phone}:`,
+      clearError,
+    );
+  }
+
   return true;
+}
+
+const NO_ANSWER_RETRY_DELAY_MS = 600_000;
+
+// TODO: Use Vercel cron or Bolna Workflow for production retry
+function scheduleNoAnswerRetry(
+  apiKey: string,
+  agentId: string,
+  patient: Patient,
+  callStartedAt: string,
+): void {
+  if (process.env.VERCEL === "1") {
+    return;
+  }
+
+  setTimeout(async () => {
+    if (!patient.name) {
+      console.log(
+        `No-answer retry skipped: missing patient name for ${patient.phone}`,
+      );
+      return;
+    }
+
+    const { data: logs, error } = await supabase
+      .from("call_logs")
+      .select("status")
+      .eq("patient_name", patient.name)
+      .gte("created_at", callStartedAt)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.error(
+        `No-answer retry check failed for ${patient.name}:`,
+        error,
+      );
+      return;
+    }
+
+    const latestStatus = logs?.[0]?.status;
+
+    if (latestStatus === "completed") {
+      console.log(`No-answer retry skipped: ${patient.name} completed call`);
+      return;
+    }
+
+    if (latestStatus === "no-answer") {
+      console.log(`No answer for ${patient.name}, firing retry Bolna call`);
+      await triggerBolnaCall(apiKey, agentId, patient);
+      return;
+    }
+
+    console.log(
+      `No-answer retry skipped for ${patient.name}: latest status ${latestStatus ?? "none"}`,
+    );
+  }, NO_ANSWER_RETRY_DELAY_MS);
 }
 
 async function handleTriggerReminder(request: NextRequest) {
@@ -107,6 +181,8 @@ async function handleTriggerReminder(request: NextRequest) {
     }
   }
 
+  const callStartedAt = new Date().toISOString();
+
   const results = await Promise.allSettled(
     callablePatients.map((patient) =>
       triggerBolnaCall(apiKey, agentId, patient),
@@ -116,6 +192,13 @@ async function handleTriggerReminder(request: NextRequest) {
   const count = results.filter(
     (result) => result.status === "fulfilled" && result.value === true,
   ).length;
+
+  callablePatients.forEach((patient, index) => {
+    const result = results[index];
+    if (result.status === "fulfilled" && result.value === true) {
+      scheduleNoAnswerRetry(apiKey, agentId, patient, callStartedAt);
+    }
+  });
 
   for (const result of results) {
     if (result.status === "rejected") {
