@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/summary-call",
-      "schedule": "45 * * * *"
+      "schedule": "45 16 * * *"
     }
   ]
 }

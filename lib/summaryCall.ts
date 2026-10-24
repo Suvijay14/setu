@@ -30,7 +30,9 @@ export function isSummaryTimeWindowDue(summaryTime: string, now = new Date()): b
   const current = parseTimeToMinutes(getCurrentTimeIST(now));
   if (scheduled === null || current === null) return false;
 
-  return scheduled > current - 60 && scheduled <= current;
+  // Vercel Hobby allows daily crons only (see vercel.json: 16:45 UTC ≈ 22:15 IST).
+  // Batch run: include anyone whose IST summary time has already passed today.
+  return scheduled <= current;
 }
 
 function getIstDateKey(date: Date): string {
