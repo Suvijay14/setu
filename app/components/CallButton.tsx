@@ -12,7 +12,11 @@ function mapBolnaState(state: BolnaCallState): UiState {
   return "idle";
 }
 
-export default function CallButton() {
+export default function CallButton({
+  variant = "default",
+}: {
+  variant?: "default" | "warm";
+}) {
   const callRef = useRef<BolnaWebCall | null>(null);
   const [state, setState] = useState<UiState>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +95,7 @@ export default function CallButton() {
         >
           End Call
         </button>
-        <p className="text-sm text-cyan-300">Connected — speak in Hindi</p>
+        <p className="text-sm text-amber-200">Connected — speak in Hindi</p>
       </div>
     );
   }
@@ -113,19 +117,32 @@ export default function CallButton() {
     );
   }
 
+  const warmIdle = variant === "warm";
+
   return (
     <div className="flex flex-col items-center gap-3">
       <button
         type="button"
         onClick={onPrimaryClick}
-        className="group relative flex h-28 w-28 flex-col items-center justify-center rounded-full bg-gradient-to-tr from-amber-400 via-orange-500 to-amber-600 text-surface-base shadow-[0_0_40px_rgba(255,153,51,0.55)] transition active:scale-95"
+        className={
+          warmIdle
+            ? "relative flex h-20 w-20 flex-col items-center justify-center rounded-full border-2 border-amber-200/50 bg-gradient-to-tr from-amber-500 to-orange-500 text-slate-950 shadow-lg transition active:scale-95"
+            : "group relative flex h-28 w-28 flex-col items-center justify-center rounded-full bg-gradient-to-tr from-amber-400 via-orange-500 to-amber-600 text-surface-base shadow-[0_0_40px_rgba(255,153,51,0.55)] transition active:scale-95"
+        }
         aria-label="Call Setu Now"
       >
-        <span className="absolute inset-0 animate-ping rounded-full bg-amber-400/30" />
-        <span className="relative text-3xl" aria-hidden>
-          📞
+        {!warmIdle ? (
+          <span className="absolute inset-0 animate-ping rounded-full bg-amber-400/30" />
+        ) : null}
+        <span
+          className={`material-symbols-outlined ${warmIdle ? "text-[28px]" : "relative text-3xl"}`}
+          aria-hidden
+        >
+          call
         </span>
-        <span className="relative mt-1 text-[10px] font-extrabold uppercase tracking-wider">
+        <span
+          className={`relative font-extrabold uppercase tracking-wider ${warmIdle ? "mt-0.5 font-sans text-[9px]" : "mt-1 text-[10px]"}`}
+        >
           Call Setu Now
         </span>
       </button>

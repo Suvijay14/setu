@@ -1,119 +1,262 @@
+import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
 import CallButton from "./CallButton";
 
-function SectionBadge({
-  children,
-  tone = "cyan",
-}: {
-  children: ReactNode;
-  tone?: "cyan" | "amber" | "rose";
-}) {
-  const tones = {
-    cyan: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
-    amber: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-    rose: "text-rose-400 bg-rose-500/10 border-rose-500/20",
-  };
-  return (
-    <span
-      className={`text-xs font-mono font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${tones[tone]}`}
-    >
-      {children}
-    </span>
-  );
-}
+const HERO_GRANDMOTHER_IMG =
+  "https://lh3.googleusercontent.com/aida-public/AB6AXuCL7cMDE-1UN5Hx4vUd1gkKXjnmZrlp5YTQxIAqUXD2RtYYjwAmhn2P0LLDPlSMIMnOlTUWQX2KWcl-UATyPtBTSQZrz533Hs9dd9EQoR5pgSWz96zcgEXWLXQWj3RpGQkNWPchYICYGz6mpjP0dbo8IaliO4Z0GIJix2Rw_7EvvW_wFIJe4RYSLd1pqdqtzBpzNAH9-1f6VvvT9SsNqLSKbJtUjUoFxlB0lLccWSYtFYmRiDSNPPv6OQ";
 
-function GlassCard({
-  children,
-  className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
+const STORY_GRANDFATHER_IMG =
+  "https://lh3.googleusercontent.com/aida-public/AB6AXuDMX0fgiK_IzGWDUsrRfLzr4icJAvHsperVFHFXpSugho1OOExmHi-clr-Fgs3u9wmmPnoKLBeEJzacl1skD_INtswdmHWNqKl06ilKsyNkl89oEiHxk2mNfHE09gUHNj-zHEjxlICJ-EWvOkQR9lYmpH0qJzNrPncMQMyBJ376TaO0Y4wBuC4iNn5BRaH0q0EMMpaqBEq3r-mW766KMfiTrm805tcInrzTatoLpxwBrRnuXot-Twp2sw";
+
+function Icon({ name, className = "" }: { name: string; className?: string }) {
   return (
-    <div
-      className={`rounded-2xl bg-gradient-to-b from-white/[0.06] to-white/[0.02] border border-white/10 backdrop-blur-xl p-5 shadow-lg ${className}`}
-    >
-      {children}
-    </div>
+    <span className={`material-symbols-outlined ${className}`} aria-hidden>
+      {name}
+    </span>
   );
 }
 
 export default function SetuLanding() {
   return (
     <div className="flex min-h-screen flex-col bg-surface-base text-on-surface selection:bg-primary-container selection:text-surface-base">
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-surface-base/85 pt-safe backdrop-blur-xl">
-        <div className="mx-auto flex h-20 max-w-6xl items-center justify-between gap-3 px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary-container via-surface-level-2 to-surface-level-3 text-xl shadow-[0_0_24px_rgba(255,153,51,0.35)]">
-              🌉
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-amber-900/20 bg-[#0E1322]/90 pt-safe backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.35)]">
+        <div className="mx-auto flex h-16 max-w-lg items-center justify-between gap-3 px-5 sm:max-w-6xl sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-200/30 bg-gradient-to-br from-amber-500 to-orange-600 font-display text-lg font-black text-[#1E1102] shadow-sm">
+              से
             </div>
             <div>
-              <div className="flex items-baseline gap-1.5 font-display">
-                <span className="text-lg font-bold text-white">Setu</span>
-                <span className="bg-gradient-to-r from-amber-400 to-rose-400 bg-clip-text text-lg font-bold text-transparent">
-                  सेतु
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-display text-xl font-bold tracking-tight text-white">
+                  Setu
+                </span>
+                <span className="font-display text-sm font-semibold text-amber-300/90">
+                  | सेतु
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400">Neural Hindi Telephony</p>
+              <p className="text-[10px] font-medium tracking-wide text-amber-200/60">
+                Daily Elder Voice Companion
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <a
               href="#live-demo"
-              className="hidden rounded-full border border-amber-300/40 bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-950 shadow-[0_0_25px_rgba(255,153,51,0.4)] sm:inline-flex"
+              className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3.5 py-1.5 text-xs font-bold tracking-wide text-slate-950 shadow-sm transition active:scale-95"
             >
+              <Icon name="call" className="text-[15px]" />
               Try Live
             </a>
             <Link
               href="/dashboard"
-              className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-xs font-semibold text-cyan-300 transition hover:bg-cyan-500/20"
+              className="hidden rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-200 sm:inline-flex"
             >
-              Access Dashboard
+              Dashboard
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 pt-20">
+      <main className="relative flex-1 pb-40 pt-16">
         {/* Hero */}
-        <section className="relative overflow-hidden px-6 pb-16 pt-8">
-          <div className="pointer-events-none absolute -top-24 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-gradient-to-br from-indigo-600/30 via-cyan-500/20 to-amber-500/30 blur-[100px]" />
-          <div className="relative mx-auto flex max-w-2xl flex-col items-center text-center">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs text-zinc-200">
-              <span className="h-2 w-2 animate-ping rounded-full bg-cyan-400" />
-              Powered by Neural Hindi TTS
+        <section className="relative flex flex-col items-center overflow-hidden px-5 pb-8 pt-6">
+          <div className="pointer-events-none absolute -top-12 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-amber-600/15 blur-[90px]" />
+          <div className="relative mx-auto flex w-full max-w-sm flex-col items-center text-center lg:max-w-2xl">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-500/25 bg-amber-500/10 px-3.5 py-1.5 text-xs font-medium tracking-wide text-amber-300 shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-amber-400" />
+              <span className="font-display italic">
+                Daily Hindi Check-ins • 100% Voice
+              </span>
             </div>
-            <h1 className="font-display text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
+            <h1 className="mb-3 max-w-sm font-display text-[32px] font-semibold leading-[1.22] text-white">
               Setu calls your parents.{" "}
-              <span className="bg-gradient-to-r from-amber-300 via-rose-300 to-cyan-300 bg-clip-text text-transparent">
+              <span className="font-normal italic text-amber-300">
                 Every day. In Hindi.
               </span>
             </h1>
-            <p className="mt-4 max-w-lg text-sm leading-relaxed text-zinc-400 sm:text-base">
-              Medication reminders, emergency alerts, and nearby hospital search —
-              through an autonomous voice agent. Zero smartphone or internet
-              friction for elders.
+            <p className="mb-5 max-w-xs text-sm leading-relaxed text-zinc-300/90">
+              Gentle medication reminders, morning chai greetings, and immediate
+              family alerts — like a loving child calling home every morning.
             </p>
-            <div id="hero-call" className="mt-10">
-              <CallButton />
-            </div>
-            <p className="mt-6 max-w-md text-sm italic text-zinc-400">
-              Pretend you&apos;re a 72-year-old who forgot her BP tablet
-            </p>
-            <div className="mt-8 flex w-full max-w-sm flex-col gap-2.5 sm:flex-row sm:max-w-none sm:justify-center">
+            <div className="mb-5 flex w-full max-w-sm flex-col gap-2.5">
+              <a
+                href="#live-demo"
+                className="flex min-h-[50px] w-full items-center justify-center gap-2 rounded-xl border border-amber-200/40 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-sm font-bold tracking-wide text-slate-950 shadow-[0_4px_20px_rgba(245,158,11,0.25)] transition active:scale-95"
+              >
+                <Icon name="call" className="text-[19px]" />
+                Try a Live Hindi Call
+              </a>
               <Link
                 href="/setup"
-                className="flex min-h-[50px] items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-6 text-sm font-semibold text-white transition hover:bg-white/[0.08]"
+                className="flex min-h-[46px] w-full items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.06] text-xs font-medium text-white transition hover:bg-white/[0.1] active:scale-95"
               >
                 Set Up for My Parents
+                <Icon name="arrow_forward" className="text-[16px] text-amber-300" />
               </Link>
-              <Link
-                href="/dashboard"
-                className="flex min-h-[50px] items-center justify-center gap-2 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-6 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-500/20"
-              >
-                Access Dashboard
-              </Link>
+            </div>
+            <div className="mb-6 flex w-full max-w-sm items-center justify-center gap-2 rounded-lg border border-amber-900/30 bg-surface-level-1 px-3 py-2 text-center">
+              <Icon name="phone_enabled" className="text-[18px] text-amber-400" />
+              <span className="text-[11px] leading-tight text-amber-200/80">
+                Works on JioPhone, BSNL landlines &amp; basic keypad phones. No
+                smartphone required.
+              </span>
+            </div>
+            <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-amber-500/20 bg-surface-level-1 shadow-2xl">
+              <Image
+                src={HERO_GRANDMOTHER_IMG}
+                alt="Smiling Indian grandmother having morning call on phone"
+                width={800}
+                height={600}
+                className="aspect-[4/3] w-full object-cover object-center"
+                priority
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0D111E] via-transparent to-transparent opacity-90" />
+              <div className="absolute inset-x-3.5 bottom-3.5 flex items-end justify-between gap-2">
+                <div className="rounded-2xl border border-amber-300/20 bg-[#12192B]/90 px-3.5 py-2 backdrop-blur-md">
+                  <p className="font-display text-xs italic text-amber-200">
+                    “नमस्ते दादीजी, आज सुबह कैसी तबीयत है?”
+                  </p>
+                  <span className="mt-0.5 block font-sans text-[10px] text-zinc-400">
+                    Dadi Asha, 74 • Daily 9:00 AM check-in
+                  </span>
+                </div>
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-400/40 bg-emerald-500/20 text-emerald-300">
+                  <Icon name="verified" className="text-[18px]" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Story */}
+        <section className="border-y border-white/5 bg-surface-level-1 px-5 py-10">
+          <div className="mx-auto flex w-full max-w-sm flex-col lg:max-w-2xl">
+            <span className="mb-1 font-display text-xs font-semibold italic text-amber-400">
+              Caring from miles away
+            </span>
+            <h2 className="mb-3 font-display text-2xl font-semibold leading-snug tracking-tight text-white">
+              You are in Bengaluru or the Bay Area.{" "}
+              <span className="font-normal text-zinc-300">
+                They are in Lucknow or Jaipur.
+              </span>
+            </h2>
+            <p className="mb-5 text-xs leading-relaxed text-zinc-400">
+              Between back-to-back meetings and time zones, you worry:{" "}
+              <em>Did Dad take his blood pressure pill? Did Mom feel dizzy again?</em>{" "}
+              They won&apos;t mention minor aches because they never want to
+              trouble you.
+            </p>
+            <div className="relative mb-5 overflow-hidden rounded-2xl border border-white/10 shadow-lg">
+              <Image
+                src={STORY_GRANDFATHER_IMG}
+                alt="Indian grandfather having morning chai while listening to phone call"
+                width={800}
+                height={600}
+                className="aspect-[4/3] w-full object-cover"
+              />
+              <div className="absolute inset-x-2.5 bottom-2.5 rounded-xl border border-white/10 bg-black/60 px-3 py-1.5 backdrop-blur-md">
+                <p className="text-[11px] text-zinc-200">
+                  “Setu feels like a caring family member checking in over
+                  morning chai.”
+                </p>
+              </div>
+            </div>
+            <div className="mb-2 grid grid-cols-2 gap-3">
+              <div className="flex flex-col rounded-2xl border border-white/5 bg-surface-level-2 p-3.5">
+                <span className="mb-0.5 font-display text-2xl font-bold text-amber-300">
+                  149M
+                </span>
+                <span className="mb-1 text-xs font-medium text-white">
+                  Aging parents
+                </span>
+                <span className="text-[10px] leading-snug text-zinc-400">
+                  In India, over 149M elders require daily health oversight.
+                </span>
+              </div>
+              <div className="flex flex-col rounded-2xl border border-white/5 bg-surface-level-2 p-3.5">
+                <span className="mb-0.5 font-display text-2xl font-bold text-amber-300">
+                  27%
+                </span>
+                <span className="mb-1 text-xs font-medium text-white">
+                  Living alone
+                </span>
+                <span className="text-[10px] leading-snug text-zinc-400">
+                  Living independently while their adult children work elsewhere.
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Live demo + Bolna */}
+        <section
+          id="live-demo"
+          className="flex flex-col items-center px-5 py-10"
+        >
+          <div className="relative mx-auto w-full max-w-sm overflow-hidden rounded-3xl border border-amber-500/25 bg-surface-level-2 p-5 text-center shadow-xl">
+            <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-amber-500/10 blur-2xl" />
+            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/15 text-amber-400">
+              <Icon name="hearing" className="text-[22px]" />
+            </div>
+            <h2 className="mb-1 font-display text-xl font-bold text-white">
+              Hear Setu Speak in Hindi
+            </h2>
+            <p className="mb-4 max-w-xs text-xs text-zinc-400">
+              Respectful, unhurried, and culturally grounded — start a real web
+              call below.
+            </p>
+            <div className="mb-4 flex w-full flex-col items-center rounded-2xl border border-amber-400/20 bg-[#111728] p-4">
+              <CallButton variant="warm" />
+              <p className="mt-4 max-w-xs text-xs italic text-zinc-400">
+                Pretend you&apos;re a 72-year-old who forgot her BP tablet
+              </p>
+              <div className="mt-3 flex h-6 items-center justify-center gap-1.5 px-4 opacity-40">
+                {[2, 3.5, 5, 4, 2.5].map((h, i) => (
+                  <span
+                    key={i}
+                    className="w-1.5 rounded-full bg-amber-400/80"
+                    style={{ height: `${h * 4}px` }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="mb-4 w-full text-left">
+              <span className="mb-2 block font-display text-[11px] font-medium italic text-amber-200/70">
+                Sample authentic elder conversations:
+              </span>
+              <div className="flex flex-col gap-2">
+                {[
+                  "“नमस्ते बेटा, नाश्ते के बाद बीपी की गोली ले ली।”",
+                  "“आज छाती में हल्का सा भारीपन लग रहा है।”",
+                ].map((phrase) => (
+                  <div
+                    key={phrase}
+                    className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-left text-xs"
+                  >
+                    <span className="font-display text-zinc-200">{phrase}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex w-full items-start gap-2.5 rounded-2xl border border-emerald-600/30 bg-[#091712] p-3 text-left">
+              <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/20 text-emerald-400">
+                <Icon name="chat" className="text-[16px]" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-emerald-400">
+                    WhatsApp to Child
+                  </span>
+                  <span className="font-mono text-[9px] text-emerald-300/60">
+                    9:04 AM
+                  </span>
+                </div>
+                <p className="mt-1 text-xs leading-snug text-zinc-200">
+                  ✅ <strong>Maa&apos;s Morning Update:</strong> Spoke for 2
+                  mins. BP medicine taken after poha. Mood cheerful. No
+                  discomfort reported.
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -121,241 +264,283 @@ export default function SetuLanding() {
         {/* How it works */}
         <section
           id="how-it-works"
-          className="bg-surface-level-1 px-6 py-16"
+          className="border-t border-white/5 bg-surface-level-1 px-5 py-10"
         >
-          <div className="mx-auto max-w-lg text-center">
-            <SectionBadge>System Architecture</SectionBadge>
-            <h2 className="mt-3 font-display text-2xl font-extrabold text-white">
-              How It Works
+          <div className="mx-auto mb-5 max-w-sm text-center">
+            <span className="font-display text-xs italic text-amber-400">
+              Simple for you, seamless for them
+            </span>
+            <h2 className="mt-1 font-display text-2xl font-semibold text-white">
+              How Setu Works
             </h2>
-            <p className="mt-1 text-xs text-zinc-400">
-              Three autonomous steps for peace of mind, miles away.
-            </p>
           </div>
-          <div className="mx-auto mt-8 flex max-w-lg flex-col gap-3">
+          <div className="mx-auto flex max-w-sm flex-col gap-3">
             {[
               {
-                n: "01",
-                title: "Family sets up once",
-                body: "Enter nickname, daily medicines, and call schedule — about 2 minutes online.",
-                tone: "cyan",
+                n: "1",
+                title: "Share their routine once",
+                body: "Tell us their medicines, preferred morning call time, and local doctor details in 2 minutes.",
               },
               {
-                n: "02",
-                title: "Setu calls every day",
-                body: "A respectful Hindi voice call at their chosen hour on any phone or landline.",
-                tone: "amber",
+                n: "2",
+                title: "Setu calls on regular phone",
+                body: "A respectful Hindi call rings their landline or keypad mobile. No apps, no logins, no Wi-Fi needed.",
               },
               {
-                n: "03",
-                title: "Family stays informed",
-                body: "WhatsApp and SMS alerts if medicine is skipped or distress is detected.",
-                tone: "rose",
+                n: "3",
+                title: "Peace of mind on your phone",
+                body: "You receive a reassuring summary on WhatsApp. If medicines are skipped or distress is sensed, you are called immediately.",
               },
             ].map((step) => (
-              <GlassCard key={step.n}>
-                <div className="flex gap-3.5">
-                  <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border font-mono text-xs font-bold ${
-                      step.tone === "cyan"
-                        ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-300"
-                        : step.tone === "amber"
-                          ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
-                          : "border-rose-500/30 bg-rose-500/10 text-rose-300"
-                    }`}
-                  >
-                    {step.n}
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-white">{step.title}</h3>
-                    <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-                      {step.body}
-                    </p>
-                  </div>
+              <div
+                key={step.n}
+                className="flex items-start gap-3.5 rounded-2xl border border-white/5 bg-surface-level-2 p-4"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/15 font-display text-sm font-bold text-amber-300">
+                  {step.n}
                 </div>
-              </GlassCard>
-            ))}
-          </div>
-        </section>
-
-        {/* Live demo */}
-        <section id="live-demo" className="px-6 py-16">
-          <div className="mx-auto max-w-md rounded-3xl border border-indigo-500/30 bg-gradient-to-b from-white/[0.08] via-[#090d20] to-[#040610] p-6 text-center shadow-[0_15px_40px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
-            <h2 className="font-display text-2xl font-extrabold text-white">
-              Try it yourself, right now
-            </h2>
-            <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-              Start a live web call and experience how Setu listens and speaks in
-              respectful Hindi.
-            </p>
-            <a
-              href="#hero-call"
-              className="my-8 inline-flex min-h-[48px] items-center justify-center rounded-full bg-primary-container px-6 text-sm font-bold text-surface-base shadow-[0_0_28px_rgba(255,153,51,0.35)]"
-            >
-              Start live call above ↑
-            </a>
-            <div className="mt-6 space-y-2 text-left">
-              <p className="text-center text-[11px] font-mono uppercase tracking-wider text-zinc-500">
-                Suggested test phrases
-              </p>
-              {[
-                "नमस्ते सेतु, मैंने बीपी की दवाई ले ली है।",
-                "सीने में हल्का दर्द है, क्या करूँ?",
-                "पास का 24 घंटे खुला अस्पताल कहाँ है?",
-              ].map((phrase) => (
-                <div
-                  key={phrase}
-                  className="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-zinc-300"
-                >
-                  {phrase}
+                <div>
+                  <h3 className="mb-0.5 text-sm font-semibold text-white">
+                    {step.title}
+                  </h3>
+                  <p className="text-xs leading-relaxed text-zinc-400">
+                    {step.body}
+                  </p>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Problem & stats */}
-        <section id="the-problem" className="bg-surface-level-1 px-6 py-16">
-          <div className="mx-auto max-w-lg text-center">
-            <SectionBadge tone="rose">The Eldercare Reality</SectionBadge>
-            <h2 className="mt-3 font-display text-2xl font-extrabold text-white">
-              Why Traditional Apps Fail Our Parents
-            </h2>
-          </div>
-          <div className="mx-auto mt-8 flex max-w-lg flex-col gap-3">
-            {[
-              { stat: "149M", label: "Elderly Indians aged 60+ (2022 Census)" },
-              { stat: "27%", label: "Live alone or only with spouse in hometown" },
-              { stat: "51%", label: "Medication non-adherence (WHO-SAGE2)" },
-            ].map((item) => (
-              <GlassCard key={item.stat}>
-                <span className="font-mono text-3xl font-black text-amber-300">
-                  {item.stat}
-                </span>
-                <p className="mt-1 text-xs text-zinc-400">{item.label}</p>
-              </GlassCard>
+              </div>
             ))}
           </div>
         </section>
 
         {/* Features */}
-        <section id="features" className="px-6 py-16">
-          <div className="mx-auto max-w-lg text-center">
-            <SectionBadge tone="amber">Devoted Technology</SectionBadge>
-            <h2 className="mt-3 font-display text-2xl font-extrabold text-white">
-              Built with Care, Powered by AI
+        <section id="features" className="px-5 py-10">
+          <div className="mx-auto mb-5 max-w-sm text-center">
+            <span className="font-display text-xs italic text-amber-400">
+              Devoted Care
+            </span>
+            <h2 className="mt-1 font-display text-2xl font-semibold text-white">
+              Thoughtful Indian Eldercare
             </h2>
           </div>
-          <div className="mx-auto mt-8 grid max-w-lg gap-3">
+          <div className="mx-auto flex max-w-sm flex-col gap-3">
             {[
               {
-                title: "Verified Medication",
-                body: "Gentle Hindi check-ins that confirm pills were taken.",
+                icon: "pill",
+                title: "Gentle Medication Verification",
+                body: (
+                  <>
+                    Setu kindly asks:{" "}
+                    <em className="text-amber-200">
+                      “दादी, क्या आपने नाश्ते के बाद वाली पीली गोली ले ली?”
+                    </em>{" "}
+                    and listens for confirmation.
+                  </>
+                ),
               },
               {
-                title: "Emergency Detection",
-                body: "Distress keywords trigger alerts to adult children.",
+                icon: "emergency",
+                title: "Instant Distress Alerts",
+                body: "Senses distress signals (चक्कर, सीने में दर्द, गिर गए) and immediately dials you and local emergency contacts.",
+                coral: true,
               },
               {
-                title: "Nearby Hospital Search",
-                body: "24/7 pharmacies and ERs through voice in familiar Hindi.",
+                icon: "local_hospital",
+                title: "Nearby Hospital & Pharmacy Search",
+                body: "Parents can ask Setu naturally for open pharmacies or clinics in their colony without touching a screen.",
               },
               {
-                title: "Remembers Everything",
-                body: "Doctor advice and routines for dignified daily conversation.",
-              },
-              {
-                title: "Two-Way Bridge (सेतु)",
-                body: "Family voice notes played warmly at the end of check-ins.",
-              },
-              {
-                title: "Scam Shield",
-                body: "Warnings about suspicious calls in their area.",
+                icon: "family_restroom",
+                title: "Voice Notes from Grandchildren",
+                body: "Record a message on your dashboard. Setu lovingly plays it for Dadi at the end of the morning call.",
               },
             ].map((f) => (
-              <GlassCard key={f.title}>
-                <h3 className="text-sm font-bold text-white">{f.title}</h3>
-                <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-                  {f.body}
-                </p>
-              </GlassCard>
+              <div
+                key={f.title}
+                className="flex flex-col rounded-2xl border border-white/10 bg-surface-level-1 p-4"
+              >
+                <div
+                  className={`mb-2.5 flex h-9 w-9 items-center justify-center rounded-xl border ${
+                    f.coral
+                      ? "border-rose-500/30 bg-rose-500/15 text-alert-coral"
+                      : "border-amber-500/30 bg-amber-500/15 text-amber-400"
+                  }`}
+                >
+                  <Icon name={f.icon} className="text-[20px]" />
+                </div>
+                <h3 className="mb-1 text-sm font-semibold text-white">
+                  {f.title}
+                </h3>
+                <p className="text-xs leading-relaxed text-zinc-400">{f.body}</p>
+              </div>
             ))}
           </div>
         </section>
 
         {/* Testimonial */}
-        <section className="bg-surface-level-1 px-6 py-16">
-          <div className="mx-auto max-w-lg rounded-3xl bg-surface-level-2 p-6 text-center">
-            <p className="font-display text-lg italic leading-snug text-white">
-              Built for the 140 million Indian elders whose children live far
-              away.
+        <section className="border-t border-white/5 bg-surface-level-1 px-5 py-10">
+          <div className="relative mx-auto max-w-sm rounded-3xl border border-amber-500/20 bg-surface-level-2 p-5 text-center">
+            <div className="mb-1 font-display text-3xl leading-none text-amber-400">
+              “
+            </div>
+            <p className="mb-3 font-display text-sm italic leading-relaxed text-white">
+              My mother in Pune lives alone. She loves Setu&apos;s polite voice
+              and proudly tells me every Sunday that she never misses her BP
+              medicine now. It&apos;s the best gift I gave her.
             </p>
-            <p className="mt-4 text-xs text-text-secondary">
-              Trusted by caregiver families across India and the diaspora.
-            </p>
+            <div className="mb-2 flex items-center justify-center gap-2">
+              <span className="text-xs font-semibold text-amber-200">
+                Rohit S.
+              </span>
+              <span className="text-[10px] text-zinc-400">
+                • Software Engineer, Sunnyvale, CA
+              </span>
+            </div>
+            <div className="inline-flex items-center gap-1 text-xs text-amber-400">
+              <span>★★★★★</span>
+              <span className="ml-1 text-[11px] text-zinc-300">
+                Trusted by 850+ NRI &amp; Indian families
+              </span>
+            </div>
           </div>
         </section>
 
         {/* Dashboard preview */}
-        <section id="dashboard-preview" className="px-6 py-16">
-          <div className="mx-auto max-w-lg text-center">
-            <SectionBadge>Real-Time Reassurance</SectionBadge>
-            <h2 className="mt-3 font-display text-2xl font-extrabold text-white">
-              Caregiver Family Dashboard
+        <section
+          id="dashboard-preview"
+          className="flex flex-col items-center px-5 py-10"
+        >
+          <div className="mb-4 max-w-sm text-center">
+            <span className="font-display text-xs italic text-amber-400">
+              Caregiver Reassurance
+            </span>
+            <h2 className="mt-1 font-display text-xl font-semibold text-white">
+              Your Parent&apos;s Daily Health Card
             </h2>
-            <p className="mt-1 text-xs text-zinc-400">
-              Check logs, health sentiment, and call history anytime.
-            </p>
           </div>
-          <div className="mx-auto mt-8 max-w-lg rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.08] to-[#040610] p-6 backdrop-blur-xl">
-            <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.04] px-3 py-2.5">
-              <div>
-                <h4 className="text-xs font-bold text-white">Daily Log</h4>
-                <span className="font-mono text-[10px] text-zinc-400">
-                  Live synced
-                </span>
+          <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-surface-level-2 p-4 shadow-xl">
+            <div className="mb-3 flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/15 font-display text-xs font-bold text-amber-300">
+                  दा
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">
+                    Dadi Asha Devi (Pune)
+                  </h4>
+                  <span className="text-[10px] text-zinc-400">
+                    Morning Call • 9:02 AM Today
+                  </span>
+                </div>
               </div>
-              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
-                Live
+              <span className="flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                Completed
               </span>
+            </div>
+            <div className="mb-4 flex flex-col gap-2">
+              {[
+                ["Amlodipine 5mg (BP)", "Taken after breakfast"],
+                ["Metformin 500mg", "Taken with morning tea"],
+                ["Overall Well-being", "Cheerful, slept well"],
+              ].map(([label, value]) => (
+                <div
+                  key={label}
+                  className="flex items-center justify-between rounded-xl border border-white/5 bg-surface-base px-3 py-2"
+                >
+                  <span className="text-xs text-zinc-300">{label}</span>
+                  <span className="text-[11px] font-medium text-emerald-300">
+                    {value}
+                  </span>
+                </div>
+              ))}
             </div>
             <Link
               href="/dashboard"
-              className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 text-xs font-bold text-cyan-300 transition hover:from-cyan-500/30 hover:to-indigo-500/30"
+              className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border border-amber-400/30 bg-amber-500/15 text-xs font-medium text-amber-300 transition hover:bg-amber-500/25 active:scale-95"
             >
-              Open Caregiver Dashboard
+              Open Family Caregiver View
+              <Icon name="arrow_forward" className="text-[16px]" />
             </Link>
           </div>
         </section>
 
-        <footer className="border-t border-white/5 bg-surface-level-1 px-6 py-12 text-center">
-          <div className="flex items-center justify-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-container text-sm font-bold text-surface-base">
+        <footer className="flex flex-col items-center border-t border-white/5 bg-surface-level-1 px-5 pb-8 pt-10 text-center">
+          <div className="mb-1.5 flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 font-display text-xs font-bold text-[#1E1102]">
               से
-            </span>
-            <span className="font-semibold text-white">Setu | सेतु</span>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="font-display text-base font-bold text-white">
+                Setu
+              </span>
+              <span className="font-display text-sm text-amber-400">
+                | सेतु
+              </span>
+            </div>
           </div>
-          <p className="mt-2 text-xs text-zinc-400">
-            The daily Hindi voice call that keeps your parents safe.
+          <p className="mb-4 max-w-xs text-xs text-zinc-400">
+            The gentle daily Hindi voice call keeping your elderly parents safe,
+            healthy, and loved.
           </p>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-xs text-text-warm">
+          <div className="mb-4 flex flex-wrap items-center justify-center gap-3 text-xs text-amber-300/80">
             <a href="#live-demo" className="hover:underline">
               Try Setu
             </a>
-            <span className="text-zinc-600">•</span>
+            <span>•</span>
             <Link href="/setup" className="hover:underline">
-              Set Up
+              Set Up Routine
             </Link>
-            <span className="text-zinc-600">•</span>
+            <span>•</span>
             <Link href="/dashboard" className="hover:underline">
-              Dashboard
+              Caregiver Login
             </Link>
           </div>
-          <p className="mt-6 text-[11px] text-zinc-500">
-            Built for Bolna × YC Symphony Buildathon 2026
+          <p className="flex items-center justify-center gap-1 text-xs text-zinc-400">
+            <span>Made with</span>
+            <span className="text-alert-coral">❤️</span>
+            <span>for Indian families worldwide</span>
           </p>
         </footer>
       </main>
+
+      <div className="pointer-events-none fixed inset-x-0 bottom-20 z-40 flex justify-center px-5">
+        <a
+          href="#live-demo"
+          className="pointer-events-auto flex min-h-[50px] w-full max-w-sm items-center justify-center gap-2 rounded-xl border border-amber-200/50 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 px-4 py-3 text-sm font-bold tracking-wide text-slate-950 shadow-[0_4px_25px_rgba(245,158,11,0.4)] transition active:scale-95"
+        >
+          <Icon name="call" className="text-[20px]" />
+          Try Live Hindi Call
+          <span className="rounded-full bg-black/20 px-2 py-0.5 font-sans text-[10px] font-extrabold text-black">
+            FREE
+          </span>
+        </a>
+      </div>
+
+      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-amber-900/20 bg-[#0B0F1C]/95 pb-safe backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-lg items-center justify-around px-5">
+          <a
+            href="#"
+            className="flex min-w-[56px] flex-col items-center justify-center gap-0.5 text-amber-400"
+          >
+            <Icon name="home" className="text-[20px]" />
+            <span className="font-sans text-[10px] font-medium">Home</span>
+          </a>
+          <a
+            href="#live-demo"
+            className="flex min-w-[56px] flex-col items-center justify-center gap-0.5 text-zinc-400 transition hover:text-white"
+          >
+            <Icon name="phone_in_talk" className="text-[20px]" />
+            <span className="font-sans text-[10px] font-medium">Demo</span>
+          </a>
+          <Link
+            href="/dashboard"
+            className="flex min-w-[56px] flex-col items-center justify-center gap-0.5 text-zinc-400 transition hover:text-white"
+          >
+            <Icon name="favorite" className="text-[20px]" />
+            <span className="font-sans text-[10px] font-medium">Caregiver</span>
+          </Link>
+        </div>
+      </nav>
     </div>
   );
 }

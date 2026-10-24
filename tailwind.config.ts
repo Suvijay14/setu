@@ -9,8 +9,9 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        "surface-base": "#0A0F1E",
-        "surface-level-1": "#12192D",
+        "surface-base": "#0D111E",
+        "surface-level-1": "#13192B",
+        "alert-coral": "#FF6B6B",
         "surface-level-2": "#18223C",
         "surface-level-3": "#1E2B4C",
         "primary-container": "#ff9933",

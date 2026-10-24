@@ -10,6 +10,7 @@ const inter = Inter({
 const playfair = Playfair_Display({
   subsets: ["latin"],
   weight: ["500", "600", "700"],
+  style: ["normal", "italic"],
   variable: "--font-playfair",
 });
 
@@ -26,6 +27,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="hi" className="dark">
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body
         className={`${inter.variable} ${playfair.variable} font-sans antialiased`}
       >
