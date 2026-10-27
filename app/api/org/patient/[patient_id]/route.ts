@@ -17,13 +17,29 @@ export async function GET(request: NextRequest, context: RouteContext) {
     );
   }
 
-  const { data: patient, error: patientError } = await supabase
+  const patientSelectWithActive =
+    "id, phone, name, location, medications, reminder_time, protocol, org_id, is_active, onboarded";
+  const patientSelectLegacy =
+    "id, phone, name, location, medications, reminder_time, protocol, org_id, onboarded";
+
+  let patientResult = await supabase
     .from("patients")
-    .select(
-      "id, phone, name, location, medications, reminder_time, protocol, org_id, is_active, onboarded",
-    )
+    .select(patientSelectWithActive)
     .eq("id", patientId)
     .maybeSingle();
+
+  if (
+    patientResult.error?.code === "42703" &&
+    patientResult.error.message?.includes("is_active")
+  ) {
+    patientResult = await supabase
+      .from("patients")
+      .select(patientSelectLegacy)
+      .eq("id", patientId)
+      .maybeSingle();
+  }
+
+  const { data: patient, error: patientError } = patientResult;
 
   if (patientError) {
     console.error("org patient GET failed:", patientError);

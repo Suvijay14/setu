@@ -1,6 +1,8 @@
 -- Run once in Supabase SQL editor (existing projects).
 -- CREATE TABLE IF NOT EXISTS does not add columns to call_logs that already exists.
 
+alter table patients add column if not exists is_active boolean default true;
+
 alter table call_logs add column if not exists agent_type text default 'b2c';
 alter table call_logs add column if not exists protocol text;
 alter table call_logs add column if not exists conversation_clarity text;

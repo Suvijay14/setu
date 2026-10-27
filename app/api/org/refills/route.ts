@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { fetchOrgPatients } from "@/lib/orgPatientsQuery";
 import { supabase } from "@/lib/supabase";
 import {
   groupRefillsByMedicine,
@@ -32,11 +33,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Organization not found" }, { status: 404 });
   }
 
-  const { data: patients, error: patientsError } = await supabase
-    .from("patients")
-    .select("id, name, phone, location")
-    .eq("org_id", orgId)
-    .or("is_active.eq.true,is_active.is.null");
+  const { data: patients, error: patientsError } = await fetchOrgPatients(
+    orgId,
+    "id, name, phone, location",
+  );
 
   if (patientsError) {
     console.error("org refills patients failed:", patientsError);

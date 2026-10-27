@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { computeOrgStats, enrichOrgPatients } from "@/lib/orgStats";
 import { sortOrgDashboardCalls } from "@/lib/sortOrgCalls";
+import { fetchOrgPatients } from "@/lib/orgPatientsQuery";
 import { supabase } from "@/lib/supabase";
 import type { CallLog } from "@/lib/types";
 
@@ -29,16 +30,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Organization not found" }, { status: 404 });
   }
 
-  const { data: patients, error: patientsError } = await supabase
-    .from("patients")
-    .select("id, phone, name, location, onboarded, reminder_time")
-    .eq("org_id", orgId)
-    .or("is_active.eq.true,is_active.is.null");
+  const { data: patients, error: patientsError } = await fetchOrgPatients(
+    orgId,
+    "id, phone, name, location, onboarded, reminder_time",
+  );
 
   if (patientsError) {
     console.error("org dashboard patients failed:", patientsError);
     return NextResponse.json(
-      { error: "Failed to load patients" },
+      {
+        error: "Failed to load patients",
+        detail: patientsError.message,
+      },
       { status: 500 },
     );
   }

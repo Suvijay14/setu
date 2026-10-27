@@ -61,7 +61,7 @@ async function fetchOrgDashboard(
   orgId: string,
 ): Promise<
   | { ok: true; data: OrgDashboardResponse }
-  | { ok: false; notFound: boolean }
+  | { ok: false; notFound: boolean; message?: string }
 > {
   const response = await fetch(
     `/api/org/dashboard?org_id=${encodeURIComponent(orgId)}`,
@@ -72,7 +72,13 @@ async function fetchOrgDashboard(
     return { ok: false, notFound: true };
   }
   if (!response.ok) {
-    return { ok: false, notFound: false };
+    const detail =
+      typeof body.detail === "string"
+        ? body.detail
+        : typeof body.error === "string"
+          ? body.error
+          : undefined;
+    return { ok: false, notFound: false, message: detail };
   }
   return { ok: true, data: body as unknown as OrgDashboardResponse };
 }
@@ -122,7 +128,10 @@ function OrgDashboardPageInner() {
         setView({ kind: "login" });
         return;
       }
-      setLoginError("Something went wrong. Please try again.");
+      setLoginError(
+        result.message ??
+          "Dashboard could not load. Run: alter table patients add column if not exists is_active boolean default true;",
+      );
       setView({ kind: "login" });
     },
     [openDashboard],
@@ -257,7 +266,11 @@ function OrgDashboardPageInner() {
     };
 
     if (!response.ok || !body.org) {
-      setLoginError(body.error ?? "Invalid code");
+      setLoginError(
+        body.error === "Invalid code"
+          ? "Invalid code. Check DEMO-2026 or your clinic code in Supabase."
+          : (body.error ?? "Invalid code"),
+      );
       return;
     }
 
