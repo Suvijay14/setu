@@ -228,12 +228,24 @@ export default function SetupPage() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-zinc-500">
+        <p className="mt-6 flex flex-col items-center gap-2 text-center text-sm text-zinc-500">
           <Link
             href="/dashboard"
             className="text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline"
           >
             Back to dashboard login
+          </Link>
+          <Link
+            href="/"
+            className="text-zinc-500 underline-offset-2 hover:text-zinc-300 hover:underline"
+          >
+            Setu home
+          </Link>
+          <Link
+            href="/org"
+            className="text-zinc-500 underline-offset-2 hover:text-zinc-300 hover:underline"
+          >
+            Clinic / org portal
           </Link>
         </p>
       </div>

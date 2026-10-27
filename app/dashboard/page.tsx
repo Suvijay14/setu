@@ -289,13 +289,27 @@ export default function DashboardPage() {
                 {patientName} · {view.familyPhone} · refreshes every 30s
               </p>
             </div>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="shrink-0 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
-            >
-              Sign out
-            </button>
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <Link
+                href="/"
+                className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+              >
+                Setu home
+              </Link>
+              <Link
+                href="/org"
+                className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+              >
+                Clinic portal
+              </Link>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+              >
+                Sign out
+              </button>
+            </div>
           </header>
 
           <div className="mb-8 grid gap-4 sm:grid-cols-3">
@@ -570,12 +584,24 @@ export default function DashboardPage() {
           </button>
         </form>
 
-        <p className="mt-6 text-sm">
+        <p className="mt-6 flex flex-col gap-2 text-sm">
           <Link
             href="/setup"
             className="text-emerald-500 underline-offset-2 hover:text-emerald-400 hover:underline"
           >
             Register a new parent →
+          </Link>
+          <Link
+            href="/"
+            className="text-zinc-500 underline-offset-2 hover:text-zinc-300 hover:underline"
+          >
+            ← Back to Setu home
+          </Link>
+          <Link
+            href="/org"
+            className="text-zinc-500 underline-offset-2 hover:text-zinc-300 hover:underline"
+          >
+            Clinic / org portal →
           </Link>
         </p>
       </div>
