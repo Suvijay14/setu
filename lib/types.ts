@@ -34,6 +34,8 @@ export interface CallLog {
   org_id: string | null;
   refill_needed: boolean | null;
   refill_medicine: string | null;
+  agent_type: string | null;
+  protocol: string | null;
   created_at: string;
 }
 

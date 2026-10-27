@@ -61,6 +61,8 @@ export function callLogFromRealtimeRow(row: Record<string, unknown>): CallLog | 
           : Boolean(row.refill_needed),
     refill_medicine:
       typeof row.refill_medicine === "string" ? row.refill_medicine : null,
+    agent_type: typeof row.agent_type === "string" ? row.agent_type : null,
+    protocol: typeof row.protocol === "string" ? row.protocol : null,
     created_at:
       typeof row.created_at === "string"
         ? row.created_at

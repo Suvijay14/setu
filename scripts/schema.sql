@@ -26,6 +26,16 @@
 -- alter table call_logs add column if not exists summary text;
 -- alter table call_logs add column if not exists emergency boolean default false;
 -- alter table call_logs add column if not exists sms_sent boolean default false;
+-- alter table call_logs add column if not exists agent_type text;
+-- alter table call_logs add column if not exists protocol text;
+-- create table if not exists training_logs (
+--   id uuid default gen_random_uuid() primary key,
+--   analysis_date timestamptz default now(),
+--   calls_analyzed integer,
+--   findings jsonb,
+--   applied_to_b2b boolean default false,
+--   created_at timestamptz default now()
+-- );
 
 -- Setu Supabase schema (documentation)
 
@@ -79,7 +89,18 @@ create table if not exists call_logs (
   org_id uuid references organizations(id),
   refill_needed boolean not null default false,
   refill_medicine text,
+  agent_type text,
+  protocol text,
   created_at timestamptz not null default now()
+);
+
+create table if not exists training_logs (
+  id uuid default gen_random_uuid() primary key,
+  analysis_date timestamptz default now(),
+  calls_analyzed integer,
+  findings jsonb,
+  applied_to_b2b boolean default false,
+  created_at timestamptz default now()
 );
 
 -- Org dashboard Realtime (run once in Supabase SQL editor):
