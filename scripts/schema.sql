@@ -8,6 +8,8 @@
 -- );
 -- alter table patients add column if not exists org_id uuid references organizations(id);
 -- alter table call_logs add column if not exists org_id uuid references organizations(id);
+-- alter table patients add column if not exists protocol text;
+-- alter table patients add column if not exists is_active boolean default true;
 -- alter table patients add column if not exists child_summary_frequency text default 'daily';
 -- alter table patients add column if not exists child_summary_time text default '20:00';
 -- alter table patients add column if not exists last_summary_sent_at timestamptz;
@@ -47,6 +49,8 @@ create table if not exists patients (
   child_summary_time text not null default '20:00',
   last_summary_sent_at timestamptz,
   org_id uuid references organizations(id),
+  protocol text,
+  is_active boolean not null default true,
   created_at timestamptz not null default now()
 );
 

@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import type { GroqOnboardingExtract } from "@/lib/types";
 
 export interface Patient {
+  id?: string;
   phone: string;
   name: string | null;
   medications: string | null;
@@ -17,6 +18,8 @@ export interface Patient {
   child_summary_time: string | null;
   last_summary_sent_at: string | null;
   org_id: string | null;
+  protocol: string | null;
+  is_active: boolean | null;
 }
 
 export type PatientUpdateData = Partial<{
@@ -32,6 +35,7 @@ export type PatientUpdateData = Partial<{
   child_summary_time: string;
   last_summary_sent_at: string;
   org_id: string;
+  protocol: string;
 }>;
 
 export interface OnboardingExtract {

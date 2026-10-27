@@ -9,6 +9,7 @@ export type StoredOrg = {
 };
 
 export type OrgPatientRow = {
+  id: string;
   phone: string;
   name: string | null;
   location: string | null;

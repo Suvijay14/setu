@@ -40,6 +40,7 @@ export function computeOrgStats(
 }
 
 type PatientSource = {
+  id: string;
   phone: string;
   name: string | null;
   location: string | null;
@@ -80,6 +81,7 @@ export function enrichOrgPatients(
     }
 
     return {
+      id: patient.id,
       phone: patient.phone,
       name: patient.name,
       location: patient.location,

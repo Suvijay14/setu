@@ -15,9 +15,9 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Setu (सेतु) — Hindi Voice AI for Elderly Parents",
+  title: "Setu (सेतु) | Daily Hindi Voice Follow-up & Clinical Telemetry",
   description:
-    "Daily Hindi voice calls for medication reminders, emergency alerts, and caregiver peace of mind.",
+    "Verified medication adherence by phone for clinics and families. Hindi voice calls, org dashboard, and family caregiver tools.",
 };
 
 export default function RootLayout({

@@ -30,8 +30,9 @@ export async function GET(request: NextRequest) {
 
   const { data: patients, error: patientsError } = await supabase
     .from("patients")
-    .select("phone, name, location, onboarded, reminder_time")
-    .eq("org_id", orgId);
+    .select("id, phone, name, location, onboarded, reminder_time")
+    .eq("org_id", orgId)
+    .or("is_active.eq.true,is_active.is.null");
 
   if (patientsError) {
     console.error("org dashboard patients failed:", patientsError);

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { CallLog } from "@/lib/types";
 import { formatDashboardDateTime, rowHighlightClass } from "@/lib/dashboardClient";
+import OrgPatientModal from "@/app/components/OrgPatientModal";
+import { countCsvPatientDataRows } from "@/lib/csvPatients";
 import {
   ORG_STORAGE_KEY,
   adherenceBadgeClass,
@@ -12,6 +14,25 @@ import {
   type OrgPatientRow,
   type StoredOrg,
 } from "@/lib/orgClient";
+
+type UploadError = { row: number; reason: string };
+
+async function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== "string") {
+        reject(new Error("Failed to read file"));
+        return;
+      }
+      const base64 = result.includes(",") ? result.split(",")[1]! : result;
+      resolve(base64);
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("Read failed"));
+    reader.readAsDataURL(file);
+  });
+}
 
 type ViewState =
   | { kind: "login" }
@@ -48,6 +69,19 @@ export default function OrgDashboardPage() {
   const [codeInput, setCodeInput] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [view, setView] = useState<ViewState>({ kind: "loading" });
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgressLabel, setUploadProgressLabel] = useState<string | null>(
+    null,
+  );
+  const [uploadSuccessMessage, setUploadSuccessMessage] = useState<
+    string | null
+  >(null);
+  const [uploadErrors, setUploadErrors] = useState<UploadError[]>([]);
+  const [uploadApiError, setUploadApiError] = useState<string | null>(null);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(
+    null,
+  );
 
   const openDashboard = useCallback((data: OrgDashboardResponse) => {
     setView({
@@ -142,11 +176,94 @@ export default function OrgDashboardPage() {
     await loadOrg(body.org);
   };
 
+  const refreshDashboard = useCallback(
+    async (org: StoredOrg) => {
+      const result = await fetchOrgDashboard(org.id);
+      if (result.ok) {
+        openDashboard(result.data);
+      }
+    },
+    [openDashboard],
+  );
+
   const handleSignOut = () => {
     localStorage.removeItem(ORG_STORAGE_KEY);
     setCodeInput("");
     setLoginError(null);
+    setCsvFile(null);
+    setUploadSuccessMessage(null);
+    setUploadErrors([]);
+    setUploadApiError(null);
     setView({ kind: "login" });
+  };
+
+  const handleCsvUpload = async () => {
+    if (view.kind !== "dashboard" || !csvFile) return;
+
+    setUploadApiError(null);
+    setUploadSuccessMessage(null);
+    setUploadErrors([]);
+
+    let rowCount = 0;
+    try {
+      const text = await csvFile.text();
+      rowCount = countCsvPatientDataRows(text);
+    } catch {
+      setUploadApiError("Could not read CSV file.");
+      return;
+    }
+
+    if (rowCount === 0) {
+      setUploadApiError("CSV has no patient rows.");
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgressLabel(`Uploading ${rowCount} patients...`);
+
+    try {
+      const csv_file_base64 = await readFileAsBase64(csvFile);
+      const response = await fetch("/api/org/upload-patients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          org_id: view.org.id,
+          csv_file_base64,
+        }),
+      });
+
+      const body = (await response.json()) as {
+        success?: number;
+        errors?: UploadError[];
+        error?: string;
+      };
+
+      if (!response.ok) {
+        setUploadApiError(body.error ?? "Upload failed.");
+        if (body.errors?.length) {
+          setUploadErrors(body.errors);
+        }
+        return;
+      }
+
+      const successCount = body.success ?? 0;
+      setUploadErrors(body.errors ?? []);
+
+      if (successCount > 0) {
+        setUploadSuccessMessage(
+          `${successCount} patients added. Setu will call them at their reminder times.`,
+        );
+        setCsvFile(null);
+        await refreshDashboard(view.org);
+      } else {
+        setUploadApiError("No patients were imported. Fix the errors below.");
+      }
+    } catch {
+      setUploadApiError("Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+      setUploadProgressLabel(null);
+    }
   };
 
   if (view.kind === "loading") {
@@ -162,6 +279,14 @@ export default function OrgDashboardPage() {
 
     return (
       <div className="min-h-screen bg-zinc-950 text-zinc-100">
+        {selectedPatientId ? (
+          <OrgPatientModal
+            orgId={org.id}
+            patientId={selectedPatientId}
+            onClose={() => setSelectedPatientId(null)}
+            onInactive={() => void refreshDashboard(org)}
+          />
+        ) : null}
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -175,13 +300,27 @@ export default function OrgDashboardPage() {
                 Organization dashboard · refreshes every 30s
               </p>
             </div>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="shrink-0 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
-            >
-              Sign out
-            </button>
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <Link
+                href="/"
+                className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+              >
+                Setu home
+              </Link>
+              <Link
+                href="/dashboard"
+                className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+              >
+                Family dashboard
+              </Link>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+              >
+                Sign out
+              </button>
+            </div>
           </header>
 
           <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -221,6 +360,80 @@ export default function OrgDashboardPage() {
             </div>
           </div>
 
+          <section className="mb-8 rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+            <h2 className="text-sm font-semibold text-white">Upload Patients</h2>
+            <p className="mt-1 text-xs text-zinc-400">
+              Import up to 1,000 patients from CSV. They will be onboarded under{" "}
+              {org.name}.
+            </p>
+            <p className="mt-3">
+              <a
+                href="/patients_template.csv"
+                download="patients_template.csv"
+                className="text-xs text-emerald-500 underline-offset-2 hover:text-emerald-400 hover:underline"
+              >
+                Download CSV template
+              </a>
+            </p>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+              <label className="block flex-1">
+                <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  CSV file
+                </span>
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  disabled={uploading}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+                    setCsvFile(file);
+                    setUploadSuccessMessage(null);
+                    setUploadErrors([]);
+                    setUploadApiError(null);
+                  }}
+                  className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-800 file:px-3 file:py-2 file:text-sm file:font-medium file:text-zinc-100 hover:file:bg-zinc-700"
+                />
+              </label>
+              <button
+                type="button"
+                disabled={!csvFile || uploading}
+                onClick={() => void handleCsvUpload()}
+                className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Upload and Onboard
+              </button>
+            </div>
+            {uploadProgressLabel ? (
+              <p className="mt-3 text-sm text-amber-300">{uploadProgressLabel}</p>
+            ) : null}
+            {uploadSuccessMessage ? (
+              <p className="mt-3 text-sm text-emerald-400">{uploadSuccessMessage}</p>
+            ) : null}
+            {uploadApiError ? (
+              <p className="mt-3 text-sm text-red-400" role="alert">
+                {uploadApiError}
+              </p>
+            ) : null}
+            {uploadErrors.length > 0 ? (
+              <details className="mt-4 rounded-lg border border-zinc-800 bg-zinc-950/80 p-3">
+                <summary className="cursor-pointer text-xs font-medium text-zinc-300">
+                  {uploadErrors.length} import error
+                  {uploadErrors.length === 1 ? "" : "s"} (click to expand)
+                </summary>
+                <ul className="mt-3 max-h-48 space-y-2 overflow-y-auto text-xs text-zinc-400">
+                  {uploadErrors.map((err, index) => (
+                    <li key={`${err.row}-${index}`}>
+                      {err.row > 0 ? (
+                        <span className="text-zinc-500">Row {err.row}: </span>
+                      ) : null}
+                      {err.reason}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
+          </section>
+
           <div className="mb-8 overflow-hidden rounded-xl border border-zinc-800">
             <div className="border-b border-zinc-800 bg-zinc-900/90 px-4 py-3">
               <h2 className="text-sm font-semibold text-white">Patients</h2>
@@ -247,7 +460,11 @@ export default function OrgDashboardPage() {
                     </tr>
                   ) : (
                     patients.map((row) => (
-                      <tr key={row.phone}>
+                      <tr
+                        key={row.id}
+                        className="cursor-pointer transition hover:bg-zinc-900/60"
+                        onClick={() => setSelectedPatientId(row.id)}
+                      >
                         <td className="px-4 py-3">
                           <div className="font-medium text-zinc-100">
                             {row.name ?? "—"}
