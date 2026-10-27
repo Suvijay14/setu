@@ -1,5 +1,6 @@
 import type { CallLog } from "@/lib/types";
 import type { OrgDashboardStats, OrgPatientRow } from "@/lib/orgClient";
+import { countRefillsNeeded } from "@/lib/refills";
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -35,7 +36,10 @@ export function computeOrgStats(
     callsLast7Days: recent.length,
     adherencePercent,
     missedOrNoAnswer: recent.filter((c) => isMissedStatus(c.status)).length,
-    emergencyCount: recent.filter((c) => c.emergency === true).length,
+    emergencyCount: recent.filter(
+      (c) => c.emergency === true || c.escalation_flag === true,
+    ).length,
+    refillsNeededCount: countRefillsNeeded(calls),
   };
 }
 

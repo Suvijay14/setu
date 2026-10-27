@@ -70,12 +70,20 @@ function getTodayStartIsoIST(): string {
   return `${year}-${month}-${day}T00:00:00+05:30`;
 }
 
+export function isCallEscalation(log: {
+  emergency?: boolean | null;
+  escalation_flag?: boolean | null;
+}): boolean {
+  return log.escalation_flag === true || log.emergency === true;
+}
+
 export function rowHighlightClass(log: {
   medication_taken: MedicationTaken | null;
   action_required: YesNo | null;
   emergency: boolean | null;
+  escalation_flag?: boolean | null;
 }): string {
-  if (log.emergency || log.action_required === "yes") {
+  if (isCallEscalation(log) || log.action_required === "yes") {
     return "bg-red-950/50 hover:bg-red-950/70";
   }
   if (log.medication_taken === "no") {

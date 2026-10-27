@@ -6,6 +6,11 @@
 --   access_code text not null unique,
 --   created_at timestamptz not null default now()
 -- );
+-- alter table organizations add column if not exists pharmacy_phone text;
+-- alter table organizations add column if not exists admin_phone text;
+-- alter table call_logs add column if not exists escalation_flag boolean default false;
+-- alter table call_logs add column if not exists refill_needed boolean default false;
+-- alter table call_logs add column if not exists refill_medicine text;
 -- alter table patients add column if not exists org_id uuid references organizations(id);
 -- alter table call_logs add column if not exists org_id uuid references organizations(id);
 -- alter table patients add column if not exists protocol text;
@@ -29,6 +34,8 @@ create table if not exists organizations (
   name text not null,
   type text not null,
   access_code text not null unique,
+  pharmacy_phone text,
+  admin_phone text,
   created_at timestamptz not null default now()
 );
 
@@ -67,7 +74,18 @@ create table if not exists call_logs (
   mood text,
   summary text,
   emergency boolean default false,
+  escalation_flag boolean not null default false,
   sms_sent boolean default false,
   org_id uuid references organizations(id),
+  refill_needed boolean not null default false,
+  refill_medicine text,
   created_at timestamptz not null default now()
 );
+
+-- Org dashboard Realtime (run once in Supabase SQL editor):
+-- alter publication supabase_realtime add table call_logs;
+-- alter table call_logs enable row level security;
+-- create policy "call_logs_anon_select_org" on call_logs
+--   for select to anon
+--   using (org_id is not null);
+-- (Pilot policy: tighten with Supabase Auth + org-scoped JWT for production.)

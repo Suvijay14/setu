@@ -29,8 +29,11 @@ export interface CallLog {
   mood: string | null;
   summary: string | null;
   emergency: boolean | null;
+  escalation_flag: boolean | null;
   sms_sent: boolean | null;
   org_id: string | null;
+  refill_needed: boolean | null;
+  refill_medicine: string | null;
   created_at: string;
 }
 

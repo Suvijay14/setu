@@ -2,11 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import CallButton from "./CallButton";
 
-const HERO_IMG =
-  "https://lh3.googleusercontent.com/aida/AEtjO1WctztONjZBEzB_Bt8kj58gHkg_r7RybrW6HSeB9SWXTdyc0ymSngGoSBLItLIY8Zy59gI3UCW3p1P1lV-0ILkvmixuw7POwuoCr6KbqqWrfwimnYAgI535mAXij9qIfBpBUua17e_0naJGkUva2pWho9Ju6FDzPixTxP_VSSLjYSnAHvAZEAZw9fd-h-PvjfPxTEImrhm7It__q3Edjz7sjJszkPNalAQUF01-KuSNp39nVgUPuftl1bYr";
-
-const FAMILY_IMG =
-  "https://lh3.googleusercontent.com/aida/AEtjO1VI8fRgPxfobr3smZLucO5ewuYZE7rrvpBflhe06nrMuD-EADJbnD41m35yMBW5OtbK7PzAMWs5Y7BA-UnL3JBzVKqNupGWkp_ZlyaQ0WE2rFnLY-WVjUPE4i1v7HGrg8ZWKNFp5jHmdZz-uca23BNDxHTiwg-g76dPyxWNdTP872dSC1X0o1QHbXeL8AVFFHGkSNgfC8R4O35TF15kN-R7KhrOPFa8KpZ_-BtyJfTMOPaNOgr7iamZ9r1m";
+const HERO_IMG = "/images/hero-grandmother-call.jpg";
+const FAMILY_IMG = "/images/story-grandfather-chai.jpg";
 
 function Icon({ name, className = "" }: { name: string; className?: string }) {
   return (
@@ -136,10 +133,10 @@ export default function SetuLanding() {
           <div className="relative w-full overflow-hidden rounded-2xl border border-slate-800 bg-surface-level-1 shadow-2xl">
             <Image
               src={HERO_IMG}
-              alt="Indian elderly patient speaking calmly on a basic phone"
-              width={800}
-              height={400}
-              className="h-56 w-full rounded-xl object-cover"
+              alt="Smiling Indian grandmother on a landline call at home"
+              width={1920}
+              height={1080}
+              className="aspect-video w-full rounded-xl object-cover object-center"
               priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-surface-base via-transparent to-transparent opacity-90" />
@@ -319,10 +316,10 @@ export default function SetuLanding() {
           <div className="relative mb-5 overflow-hidden rounded-2xl border border-slate-800 shadow-lg">
             <Image
               src={FAMILY_IMG}
-              alt="Indian grandfather having morning chai while listening to daily call"
-              width={800}
-              height={400}
-              className="h-48 w-full object-cover"
+              alt="Indian grandfather at morning chai, answering a Setu check-in call"
+              width={1920}
+              height={1080}
+              className="aspect-video w-full object-cover object-center"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-surface-base via-transparent to-transparent opacity-80" />
           </div>

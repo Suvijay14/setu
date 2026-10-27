@@ -26,6 +26,7 @@ export type OrgDashboardStats = {
   adherencePercent: number | null;
   missedOrNoAnswer: number;
   emergencyCount: number;
+  refillsNeededCount: number;
 };
 
 export type OrgDashboardResponse = {

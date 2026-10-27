@@ -1,9 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { CallLog } from "@/lib/types";
-import { formatDashboardDateTime, rowHighlightClass } from "@/lib/dashboardClient";
+import {
+  formatDashboardDateTime,
+  isCallEscalation,
+  rowHighlightClass,
+} from "@/lib/dashboardClient";
+import { sortOrgDashboardCalls } from "@/lib/sortOrgCalls";
 import OrgPatientModal from "@/app/components/OrgPatientModal";
 import { countCsvPatientDataRows } from "@/lib/csvPatients";
 import {
@@ -14,6 +20,12 @@ import {
   type OrgPatientRow,
   type StoredOrg,
 } from "@/lib/orgClient";
+import {
+  applyOrgDashboardCallInsert,
+  callLogFromRealtimeRow,
+} from "@/lib/orgDashboardMerge";
+import { getSupabaseBrowser } from "@/lib/supabaseBrowser";
+import { latestRefillEntries, patientNameMap } from "@/lib/refills";
 
 type UploadError = { row: number; reason: string };
 
@@ -65,7 +77,8 @@ async function fetchOrgDashboard(
   return { ok: true, data: body as unknown as OrgDashboardResponse };
 }
 
-export default function OrgDashboardPage() {
+function OrgDashboardPageInner() {
+  const searchParams = useSearchParams();
   const [codeInput, setCodeInput] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [view, setView] = useState<ViewState>({ kind: "loading" });
@@ -82,6 +95,7 @@ export default function OrgDashboardPage() {
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(
     null,
   );
+  const [liveConnected, setLiveConnected] = useState(false);
 
   const openDashboard = useCallback((data: OrgDashboardResponse) => {
     setView({
@@ -134,7 +148,82 @@ export default function OrgDashboardPage() {
   }, [loadOrg]);
 
   useEffect(() => {
+    const patientId = searchParams.get("patient_id")?.trim();
+    if (patientId && view.kind === "dashboard") {
+      setSelectedPatientId(patientId);
+    }
+  }, [searchParams, view.kind]);
+
+  const dashboardOrgId = view.kind === "dashboard" ? view.org.id : null;
+
+  const sortedCalls = useMemo(() => {
+    if (view.kind !== "dashboard") return [];
+    return sortOrgDashboardCalls(view.calls);
+  }, [view]);
+
+  useEffect(() => {
+    if (!dashboardOrgId) {
+      setLiveConnected(false);
+      return;
+    }
+
+    const supabase = getSupabaseBrowser();
+    if (!supabase) {
+      setLiveConnected(false);
+      return;
+    }
+
+    const channel = supabase
+      .channel(`org_${dashboardOrgId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "call_logs",
+          filter: `org_id=eq.${dashboardOrgId}`,
+        },
+        (payload) => {
+          const row = payload.new as Record<string, unknown>;
+          const log = callLogFromRealtimeRow(row);
+          if (!log) return;
+
+          setView((prev) => {
+            if (prev.kind !== "dashboard" || prev.org.id !== dashboardOrgId) {
+              return prev;
+            }
+            const merged = applyOrgDashboardCallInsert(
+              {
+                org: prev.org,
+                patients: prev.patients,
+                calls: prev.calls,
+                stats: prev.stats,
+              },
+              log,
+            );
+            return {
+              kind: "dashboard",
+              org: merged.org,
+              patients: merged.patients,
+              calls: merged.calls,
+              stats: merged.stats,
+            };
+          });
+        },
+      )
+      .subscribe((status) => {
+        setLiveConnected(status === "SUBSCRIBED");
+      });
+
+    return () => {
+      setLiveConnected(false);
+      void supabase.removeChannel(channel);
+    };
+  }, [dashboardOrgId]);
+
+  useEffect(() => {
     if (view.kind !== "dashboard") return;
+    if (liveConnected) return;
 
     const intervalId = setInterval(() => {
       void fetchOrgDashboard(view.org.id).then((result) => {
@@ -145,7 +234,7 @@ export default function OrgDashboardPage() {
     }, 30_000);
 
     return () => clearInterval(intervalId);
-  }, [view, openDashboard]);
+  }, [view, openDashboard, liveConnected]);
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -276,6 +365,18 @@ export default function OrgDashboardPage() {
 
   if (view.kind === "dashboard") {
     const { org, patients, calls, stats } = view;
+    const refillEntries = latestRefillEntries(
+      calls,
+      patientNameMap(
+        patients.map((p) => ({
+          id: p.id,
+          name: p.name,
+          phone: p.phone,
+          location: p.location,
+        })),
+      ),
+    );
+    const refillPreview = refillEntries.slice(0, 5);
 
     return (
       <div className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -296,8 +397,18 @@ export default function OrgDashboardPage() {
               <h1 className="text-2xl font-semibold tracking-tight text-white">
                 {org.name}
               </h1>
-              <p className="mt-1 text-sm text-zinc-400">
-                Organization dashboard · refreshes every 30s
+              <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-zinc-400">
+                <span>Organization dashboard</span>
+                {liveConnected ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                    Live
+                  </span>
+                ) : (
+                  <span className="text-xs text-zinc-500">
+                    · refreshes every 30s
+                  </span>
+                )}
               </p>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -359,6 +470,47 @@ export default function OrgDashboardPage() {
               </p>
             </div>
           </div>
+
+          <section className="mb-8 rounded-xl border border-amber-500/25 bg-zinc-900/60 p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-white">Refills</h2>
+                <p className="mt-1 text-2xl font-semibold text-amber-200">
+                  {stats.refillsNeededCount} patient
+                  {stats.refillsNeededCount === 1 ? "" : "s"} need refills
+                </p>
+                <p className="mt-1 text-xs text-zinc-500">Last 7 days · from voice calls</p>
+              </div>
+              <Link
+                href="/org/refills"
+                className="shrink-0 rounded-lg bg-amber-600/90 px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-amber-500"
+              >
+                View all refills →
+              </Link>
+            </div>
+            {refillPreview.length > 0 ? (
+              <ul className="mt-4 divide-y divide-zinc-800/80 rounded-lg border border-zinc-800 bg-zinc-950/80 text-sm">
+                {refillPreview.map((row) => (
+                  <li
+                    key={`${row.patient_name}-${row.needed_at}`}
+                    className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5"
+                  >
+                    <span className="font-medium text-zinc-200">
+                      {row.patient_name}
+                    </span>
+                    <span className="text-zinc-400">{row.medicine}</span>
+                    <span className="text-xs text-zinc-500">
+                      {formatDashboardDateTime(row.needed_at)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-4 text-sm text-zinc-500">
+                No refill requests detected yet.
+              </p>
+            )}
+          </section>
 
           <section className="mb-8 rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
             <h2 className="text-sm font-semibold text-white">Upload Patients</h2>
@@ -437,6 +589,9 @@ export default function OrgDashboardPage() {
           <div className="mb-8 overflow-hidden rounded-xl border border-zinc-800">
             <div className="border-b border-zinc-800 bg-zinc-900/90 px-4 py-3">
               <h2 className="text-sm font-semibold text-white">Patients</h2>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                Click a row for full history, adherence, and medications
+              </p>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-zinc-800 text-left text-sm">
@@ -462,8 +617,16 @@ export default function OrgDashboardPage() {
                     patients.map((row) => (
                       <tr
                         key={row.id}
-                        className="cursor-pointer transition hover:bg-zinc-900/60"
+                        role="button"
+                        tabIndex={0}
+                        className="cursor-pointer transition hover:bg-zinc-900/60 focus:bg-zinc-900/60 focus:outline-none focus:ring-1 focus:ring-primary-container/50"
                         onClick={() => setSelectedPatientId(row.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            setSelectedPatientId(row.id);
+                          }
+                        }}
                       >
                         <td className="px-4 py-3">
                           <div className="font-medium text-zinc-100">
@@ -511,11 +674,11 @@ export default function OrgDashboardPage() {
                     <th className="px-4 py-3 font-medium">Status</th>
                     <th className="px-4 py-3 font-medium">Medication</th>
                     <th className="px-4 py-3 font-medium">Summary</th>
-                    <th className="px-4 py-3 font-medium">Emergency</th>
+                    <th className="px-4 py-3 font-medium">Escalation</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/80 bg-zinc-950">
-                  {calls.length === 0 ? (
+                  {sortedCalls.length === 0 ? (
                     <tr>
                       <td
                         colSpan={6}
@@ -525,7 +688,7 @@ export default function OrgDashboardPage() {
                       </td>
                     </tr>
                   ) : (
-                    calls.map((row) => (
+                    sortedCalls.map((row) => (
                       <tr
                         key={row.id}
                         className={`transition-colors ${rowHighlightClass(row)}`}
@@ -546,12 +709,12 @@ export default function OrgDashboardPage() {
                           {row.summary ?? "—"}
                         </td>
                         <td className="px-4 py-3">
-                          {row.emergency ? (
-                            <span className="font-medium text-red-400">
-                              Yes
+                          {isCallEscalation(row) ? (
+                            <span className="inline-flex rounded-full border border-red-500/50 bg-red-500/15 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-red-300">
+                              Escalation
                             </span>
                           ) : (
-                            <span className="text-zinc-500">No</span>
+                            <span className="text-zinc-500">—</span>
                           )}
                         </td>
                       </tr>
@@ -617,5 +780,19 @@ export default function OrgDashboardPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function OrgDashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
+          Loading…
+        </div>
+      }
+    >
+      <OrgDashboardPageInner />
+    </Suspense>
   );
 }

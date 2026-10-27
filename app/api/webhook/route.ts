@@ -12,6 +12,11 @@ import {
   analyzeCallTranscript,
   getEmergencyConcernForSms,
 } from "@/lib/analyzeCallTranscript";
+import {
+  extractCallSummary,
+  extractRefillIntent,
+} from "@/lib/extractCallSummary";
+import { getAppBaseUrl } from "@/lib/escalationSms";
 import { searchNearby, type NearbyPlace } from "@/lib/nearbySearch";
 import type {
   BolnaWebhookPayload,
@@ -69,6 +74,18 @@ function buildEmergencySms(patientName: string, concern: string): string {
 ${patientName}
 ${concern.slice(0, 80)}
 ABHI call karein.`);
+}
+
+function buildRefillPharmacySms(
+  patientName: string,
+  patientPhone: string,
+  medicine: string,
+): string {
+  return truncateSms(`💊 Setu Refill
+Patient: ${patientName}
+Phone: ${patientPhone}
+Medicine: ${medicine.slice(0, 60)}
+Refill requested on voice call.`);
 }
 
 function hasGroqApiKey(): boolean {
@@ -251,87 +268,6 @@ If no location search is needed, respond with null.`,
   }
 }
 
-async function extractCallSummary(
-  transcript: string,
-  medicationTaken: string | null,
-  actionRequired: string | null,
-): Promise<{
-  mood: string | null;
-  summary: string | null;
-  emergency: boolean;
-  sms_sent: boolean;
-} | null> {
-  if (!transcript) return null;
-  try {
-    const response = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "qwen/qwen3.8-27b",
-          messages: [
-            {
-              role: "user",
-              content: `Analyze this Hindi voice call transcript between an elderly parent and Setu AI.
-
-Transcript:
-${transcript}
-
-Return ONLY valid JSON:
-{
-  "mood": "happy/neutral/sad/anxious/confused",
-  "summary": "one line in English describing what happened in the call",
-  "emergency": true/false,
-  "sms_sent": ${actionRequired === "yes" ? "true" : "false"}
-}
-
-mood: detect from patient's tone and words.
-summary: brief factual summary like "Ramesh confirmed taking BP tablet at 9pm."
-emergency: true only if patient mentioned chest pain, fall, breathing issue.`,
-            },
-          ],
-          max_tokens: 100,
-        }),
-      },
-    );
-
-    if (!response.ok) {
-      console.error("Groq call summary extract failed:", response.status);
-      return null;
-    }
-
-    const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const content = data.choices?.[0]?.message?.content?.trim();
-    if (!content) return null;
-
-    const jsonText = content
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/\s*```$/i, "")
-      .trim();
-
-    try {
-      return JSON.parse(jsonText) as {
-        mood: string | null;
-        summary: string | null;
-        emergency: boolean;
-        sms_sent: boolean;
-      };
-    } catch {
-      return null;
-    }
-  } catch (error) {
-    console.error("extractCallSummary error:", error);
-    return null;
-  }
-}
-
 async function extractMemoryNotes(
   transcript: string,
   concern: string | null,
@@ -476,8 +412,9 @@ export async function POST(request: NextRequest) {
       : null;
     const shouldRunOnboardingGroq = !existingPatientEarly?.onboarded;
     const groqEnabled = hasGroqApiKey();
+    const medicationsHint = existingPatientEarly?.medications ?? null;
 
-    const [onboardingData, locationExtract, callSummary, memoryNotes] =
+    const [onboardingData, locationExtract, callSummary, memoryNotes, refillIntent] =
       await Promise.all([
         shouldRunOnboardingGroq && groqEnabled
           ? extractOnboardingData(transcript)
@@ -491,7 +428,15 @@ export async function POST(request: NextRequest) {
         groqEnabled
           ? extractMemoryNotes(transcript, patient_concern)
           : Promise.resolve(null),
+        groqEnabled
+          ? extractRefillIntent(transcript, medicationsHint)
+          : Promise.resolve(null),
       ]);
+
+    const refill_needed = refillIntent?.refill_needed === true;
+    const refill_medicine = refill_needed
+      ? (refillIntent?.medicine ?? null)
+      : null;
 
     const locationQuery = locationExtract?.query ?? null;
     const currentLocationFromTranscript = locationExtract?.location ?? null;
@@ -555,6 +500,15 @@ export async function POST(request: NextRequest) {
 
     const org_id = patient?.org_id ?? null;
 
+    const emergencyConcern = getEmergencyConcernForSms(transcript);
+    const escalationDetected =
+      callSummary?.emergency === true || Boolean(emergencyConcern);
+    const escalation_reason =
+      emergencyConcern ||
+      patient_concern ||
+      callSummary?.summary ||
+      "Distress reported on call";
+
     const { error: insertError } = await supabase.from("call_logs").insert({
       call_id,
       patient_name,
@@ -567,8 +521,11 @@ export async function POST(request: NextRequest) {
       mood: callSummary?.mood ?? null,
       summary: callSummary?.summary ?? null,
       emergency: callSummary?.emergency ?? false,
+      escalation_flag: escalationDetected,
       sms_sent: callSummary?.sms_sent ?? false,
       org_id,
+      refill_needed,
+      refill_medicine,
     });
 
     if (insertError) {
@@ -616,8 +573,38 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (
+      escalationDetected &&
+      org_id &&
+      patient?.id &&
+      typeof patient.id === "string"
+    ) {
+      const escalateUrl = `${getAppBaseUrl()}/api/escalate/sms`;
+      void fetch(escalateUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patient_id: patient.id,
+          org_id,
+          escalation_reason,
+          call_transcript: transcript,
+          patient_name,
+        }),
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            const errBody = await res.text();
+            console.error("escalate/sms failed:", res.status, errBody);
+          } else {
+            console.log("Clinic escalation SMS requested via /api/escalate/sms");
+          }
+        })
+        .catch((err) => {
+          console.error("escalate/sms request error:", err);
+        });
+    }
+
     const needsTransport = !!locationQuery;
-    const emergencyConcern = getEmergencyConcernForSms(transcript);
 
     console.log(
       "SMS PRIORITY CHECK:",
@@ -679,6 +666,43 @@ export async function POST(request: NextRequest) {
         }
       } catch (error) {
         console.error("Failed to send SMS:", error);
+      }
+    }
+
+    if (
+      refill_needed &&
+      org_id &&
+      hasTwilioCredentials() &&
+      patient?.phone &&
+      !patient.phone.startsWith("temp_")
+    ) {
+      const { data: orgRow } = await supabase
+        .from("organizations")
+        .select("pharmacy_phone")
+        .eq("id", org_id)
+        .maybeSingle();
+
+      const pharmacyPhone =
+        typeof orgRow?.pharmacy_phone === "string"
+          ? orgRow.pharmacy_phone.trim()
+          : "";
+
+      if (pharmacyPhone) {
+        const medicineLabel = refill_medicine ?? "Medicine";
+        try {
+          await twilioClient.messages.create({
+            body: buildRefillPharmacySms(
+              patient_name,
+              patient.phone,
+              medicineLabel,
+            ),
+            from: process.env.TWILIO_FROM_NUMBER!,
+            to: pharmacyPhone,
+          });
+          console.log("Refill SMS sent to pharmacy:", pharmacyPhone);
+        } catch (error) {
+          console.error("Failed to send refill SMS to pharmacy:", error);
+        }
       }
     }
 

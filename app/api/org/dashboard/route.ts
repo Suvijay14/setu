@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { computeOrgStats, enrichOrgPatients } from "@/lib/orgStats";
+import { sortOrgDashboardCalls } from "@/lib/sortOrgCalls";
 import { supabase } from "@/lib/supabase";
 import type { CallLog } from "@/lib/types";
 
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const calls = (callRows ?? []) as CallLog[];
+  const calls = sortOrgDashboardCalls((callRows ?? []) as CallLog[]);
   const patientList = patients ?? [];
   const stats = computeOrgStats(calls, patientList.length);
   const enrichedPatients = enrichOrgPatients(patientList, calls);

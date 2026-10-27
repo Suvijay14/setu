@@ -128,7 +128,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Patient not found" }, { status: 404 });
   }
 
-  const is_active = body.is_active !== false ? true : false;
+  if (body.is_active !== false && body.is_active !== true) {
+    return NextResponse.json(
+      { error: "is_active must be true or false" },
+      { status: 400 },
+    );
+  }
+  const is_active = body.is_active === true;
 
   const { error: updateError } = await supabase
     .from("patients")
