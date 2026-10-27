@@ -253,7 +253,7 @@ export default function SetuLanding() {
               Speak to Setu in Hindi. Say you forgot your BP tablet or feel
               unwell.
             </p>
-            <CallButton variant="warm" />
+            <CallButton variant="warm" agentType="b2c" />
             <p className="mt-4 max-w-xs text-xs italic text-slate-400">
               Pretend you&apos;re a 72-year-old patient who forgot their morning
               medicine

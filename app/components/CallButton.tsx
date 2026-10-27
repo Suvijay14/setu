@@ -12,17 +12,43 @@ function mapBolnaState(state: BolnaCallState): UiState {
   return "idle";
 }
 
+export type CallButtonAgentType = "b2c" | "b2b";
+
+export type CallButtonProps = {
+  variant?: "default" | "warm";
+  agentType: CallButtonAgentType;
+};
+
 export default function CallButton({
   variant = "default",
-}: {
-  variant?: "default" | "warm";
-}) {
+  agentType,
+}: CallButtonProps) {
+  const agentId =
+    agentType === "b2b"
+      ? process.env.NEXT_PUBLIC_BOLNA_AGENT_ID_B2B
+      : process.env.NEXT_PUBLIC_BOLNA_AGENT_ID_B2C;
+
   const callRef = useRef<BolnaWebCall | null>(null);
   const [state, setState] = useState<UiState>("idle");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const call = new BolnaWebCall({ sessionUrl: "/api/bolna-session" });
+    const call = new BolnaWebCall({
+      getSession: async () => {
+        const response = await fetch("/api/bolna-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ agent_id: agentId }),
+        });
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => ({}))) as {
+            error?: string;
+          };
+          throw new Error(payload.error ?? "Failed to start Bolna session");
+        }
+        return response.json();
+      },
+    });
     callRef.current = call;
 
     call.on("state-change", (next) => {
@@ -42,7 +68,7 @@ export default function CallButton({
       void call.stop();
       callRef.current = null;
     };
-  }, []);
+  }, [agentId]);
 
   const startCall = useCallback(async () => {
     const call = callRef.current;

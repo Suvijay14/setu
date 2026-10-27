@@ -9,25 +9,36 @@ const DEFAULT_USER_DATA = {
 export async function POST(request: Request) {
   try {
     const apiKey = process.env.BOLNA_API_KEY;
-    const agentId = process.env.BOLNA_AGENT_ID;
-
-    if (!apiKey || !agentId) {
-      return Response.json(
-        { error: "Missing env vars: BOLNA_API_KEY or BOLNA_AGENT_ID" },
-        { status: 500 },
-      );
-    }
 
     let userData = DEFAULT_USER_DATA;
+    let agentId =
+      process.env.BOLNA_AGENT_ID ??
+      process.env.NEXT_PUBLIC_BOLNA_AGENT_ID_B2C ??
+      "";
+
     try {
       const body = (await request.json()) as {
+        agent_id?: string;
         user_data?: Record<string, unknown>;
       };
+      if (body?.agent_id?.trim()) {
+        agentId = body.agent_id.trim();
+      }
       if (body?.user_data && typeof body.user_data === "object") {
         userData = { ...DEFAULT_USER_DATA, ...body.user_data };
       }
     } catch {
       // SDK may POST an empty body when userData is unset
+    }
+
+    if (!apiKey || !agentId) {
+      return Response.json(
+        {
+          error:
+            "Missing env vars: BOLNA_API_KEY or agent_id (BOLNA_AGENT_ID / NEXT_PUBLIC_BOLNA_AGENT_ID_B2C)",
+        },
+        { status: 500 },
+      );
     }
 
     const r = await fetch(BOLNA_SESSION_URL, {
