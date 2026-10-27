@@ -63,6 +63,19 @@ export function callLogFromRealtimeRow(row: Record<string, unknown>): CallLog | 
       typeof row.refill_medicine === "string" ? row.refill_medicine : null,
     agent_type: typeof row.agent_type === "string" ? row.agent_type : null,
     protocol: typeof row.protocol === "string" ? row.protocol : null,
+    conversation_clarity:
+      typeof row.conversation_clarity === "string"
+        ? row.conversation_clarity
+        : null,
+    medication_names_used: Array.isArray(row.medication_names_used)
+      ? row.medication_names_used.filter((x): x is string => typeof x === "string")
+      : null,
+    confusion_detected:
+      typeof row.confusion_detected === "boolean"
+        ? row.confusion_detected
+        : row.confusion_detected === null
+          ? null
+          : Boolean(row.confusion_detected),
     created_at:
       typeof row.created_at === "string"
         ? row.created_at

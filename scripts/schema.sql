@@ -26,8 +26,11 @@
 -- alter table call_logs add column if not exists summary text;
 -- alter table call_logs add column if not exists emergency boolean default false;
 -- alter table call_logs add column if not exists sms_sent boolean default false;
--- alter table call_logs add column if not exists agent_type text;
+-- alter table call_logs add column if not exists agent_type text default 'b2c';
 -- alter table call_logs add column if not exists protocol text;
+-- alter table call_logs add column if not exists conversation_clarity text;
+-- alter table call_logs add column if not exists medication_names_used jsonb;
+-- alter table call_logs add column if not exists confusion_detected boolean default false;
 -- create table if not exists training_logs (
 --   id uuid default gen_random_uuid() primary key,
 --   analysis_date timestamptz default now(),
@@ -89,8 +92,11 @@ create table if not exists call_logs (
   org_id uuid references organizations(id),
   refill_needed boolean not null default false,
   refill_medicine text,
-  agent_type text,
+  agent_type text default 'b2c',
   protocol text,
+  conversation_clarity text,
+  medication_names_used jsonb,
+  confusion_detected boolean default false,
   created_at timestamptz not null default now()
 );
 

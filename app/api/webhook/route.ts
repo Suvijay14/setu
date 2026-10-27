@@ -13,9 +13,11 @@ import {
   getEmergencyConcernForSms,
 } from "@/lib/analyzeCallTranscript";
 import {
+  extractB2cCallFields,
   extractCallSummary,
   extractRefillIntent,
 } from "@/lib/extractCallSummary";
+import type { MedicationTaken } from "@/lib/types";
 import { getAppBaseUrl } from "@/lib/escalationSms";
 import { searchNearby, type NearbyPlace } from "@/lib/nearbySearch";
 import type {
@@ -35,7 +37,39 @@ type WebhookBody = BolnaWebhookPayload & {
   recipient?: string;
   phone_number?: string;
   metadata?: { from?: string; phone?: string };
+  user_data?: { agent_type?: string; [key: string]: unknown };
 };
+
+const OPTIONAL_CALL_LOG_COLUMNS = [
+  "agent_type",
+  "protocol",
+  "conversation_clarity",
+  "medication_names_used",
+  "confusion_detected",
+] as const;
+
+async function insertCallLogRow(payload: Record<string, unknown>) {
+  const row = { ...payload };
+  let lastError: { code?: string; message?: string } | null = null;
+
+  for (let attempt = 0; attempt <= OPTIONAL_CALL_LOG_COLUMNS.length; attempt += 1) {
+    const { error } = await supabase.from("call_logs").insert(row);
+    if (!error) {
+      return null;
+    }
+    lastError = error;
+
+    const missingColumn = OPTIONAL_CALL_LOG_COLUMNS.find((col) =>
+      error.message?.includes(col),
+    );
+    if (error.code !== "42703" || !missingColumn || !(missingColumn in row)) {
+      return error;
+    }
+    delete row[missingColumn];
+  }
+
+  return lastError;
+}
 
 function truncateSms(text: string, max = 160): string {
   return text.slice(0, max);
@@ -385,8 +419,13 @@ export async function POST(request: NextRequest) {
     const status = body.status;
     const transcript = body.transcript ?? "";
     const duration = body.duration;
-    const { medication_taken, action_required, patient_concern } =
-      analyzeCallTranscript(transcript);
+    const agentType =
+      body.user_data?.agent_type === "b2b" ? "b2b" : "b2c";
+
+    const transcriptAnalysis = analyzeCallTranscript(transcript);
+    let medication_taken: MedicationTaken = transcriptAnalysis.medication_taken;
+    let action_required = transcriptAnalysis.action_required;
+    let patient_concern = transcriptAnalysis.patient_concern;
     const extractedRecord = body.extracted_data as
       | Record<string, unknown>
       | undefined;
@@ -414,32 +453,56 @@ export async function POST(request: NextRequest) {
     const groqEnabled = hasGroqApiKey();
     const medicationsHint = existingPatientEarly?.medications ?? null;
 
-    const [onboardingData, locationExtract, callSummary, memoryNotes, refillIntent] =
-      await Promise.all([
-        shouldRunOnboardingGroq && groqEnabled
+    let onboardingData: GroqOnboardingExtract | null = null;
+    let locationExtract: LocationExtract | null = null;
+    let callSummary: Awaited<ReturnType<typeof extractCallSummary>> = null;
+    let memoryNotes: string | null = null;
+    let refillIntent: Awaited<ReturnType<typeof extractRefillIntent>> = null;
+    let b2cExtract: Awaited<ReturnType<typeof extractB2cCallFields>> = null;
+
+    if (agentType === "b2b") {
+      [onboardingData, locationExtract, callSummary, memoryNotes, refillIntent] =
+        await Promise.all([
+          shouldRunOnboardingGroq && groqEnabled
+            ? extractOnboardingData(transcript)
+            : Promise.resolve(null),
+          groqEnabled
+            ? extractLocationQuery(transcript)
+            : Promise.resolve(null),
+          groqEnabled
+            ? extractCallSummary(transcript, medication_taken, action_required)
+            : Promise.resolve(null),
+          groqEnabled
+            ? extractMemoryNotes(transcript, patient_concern)
+            : Promise.resolve(null),
+          groqEnabled
+            ? extractRefillIntent(transcript, medicationsHint)
+            : Promise.resolve(null),
+        ]);
+    } else if (groqEnabled) {
+      [onboardingData, b2cExtract] = await Promise.all([
+        shouldRunOnboardingGroq
           ? extractOnboardingData(transcript)
           : Promise.resolve(null),
-        groqEnabled
-          ? extractLocationQuery(transcript)
-          : Promise.resolve(null),
-        groqEnabled
-          ? extractCallSummary(transcript, medication_taken, action_required)
-          : Promise.resolve(null),
-        groqEnabled
-          ? extractMemoryNotes(transcript, patient_concern)
-          : Promise.resolve(null),
-        groqEnabled
-          ? extractRefillIntent(transcript, medicationsHint)
-          : Promise.resolve(null),
+        extractB2cCallFields(transcript),
       ]);
+      if (b2cExtract) {
+        medication_taken = b2cExtract.medication_taken;
+      }
+    } else if (shouldRunOnboardingGroq) {
+      onboardingData = await extractOnboardingData(transcript);
+    }
 
-    const refill_needed = refillIntent?.refill_needed === true;
+    const refill_needed =
+      agentType === "b2b" && refillIntent?.refill_needed === true;
     const refill_medicine = refill_needed
       ? (refillIntent?.medicine ?? null)
       : null;
 
-    const locationQuery = locationExtract?.query ?? null;
-    const currentLocationFromTranscript = locationExtract?.location ?? null;
+    const locationQuery =
+      agentType === "b2b" ? (locationExtract?.query ?? null) : null;
+    const currentLocationFromTranscript =
+      agentType === "b2b" ? (locationExtract?.location ?? null) : null;
 
     console.log("ONBOARDING DATA:", onboardingData);
 
@@ -489,6 +552,7 @@ export async function POST(request: NextRequest) {
     console.log("Parsed webhook fields:", {
       call_id,
       status,
+      agentType,
       transcript,
       duration,
       medication_taken,
@@ -502,14 +566,26 @@ export async function POST(request: NextRequest) {
 
     const emergencyConcern = getEmergencyConcernForSms(transcript);
     const escalationDetected =
-      callSummary?.emergency === true || Boolean(emergencyConcern);
+      agentType === "b2b"
+        ? callSummary?.emergency === true || Boolean(emergencyConcern)
+        : b2cExtract?.emergency === true || Boolean(emergencyConcern);
     const escalation_reason =
       emergencyConcern ||
       patient_concern ||
       callSummary?.summary ||
       "Distress reported on call";
 
-    const { error: insertError } = await supabase.from("call_logs").insert({
+    const protocol =
+      patient && "protocol" in patient && typeof patient.protocol === "string"
+        ? patient.protocol
+        : null;
+
+    const mood =
+      agentType === "b2c"
+        ? (b2cExtract?.mood ?? null)
+        : (callSummary?.mood ?? null);
+
+    const callLogInsert: Record<string, unknown> = {
       call_id,
       patient_name,
       status,
@@ -518,15 +594,29 @@ export async function POST(request: NextRequest) {
       concern: patient_concern,
       transcript,
       duration,
-      mood: callSummary?.mood ?? null,
-      summary: callSummary?.summary ?? null,
-      emergency: callSummary?.emergency ?? false,
+      mood,
+      summary: agentType === "b2b" ? (callSummary?.summary ?? null) : null,
+      emergency:
+        agentType === "b2b"
+          ? (callSummary?.emergency ?? false)
+          : (b2cExtract?.emergency ?? false),
       escalation_flag: escalationDetected,
-      sms_sent: callSummary?.sms_sent ?? false,
-      org_id,
+      sms_sent:
+        agentType === "b2b" ? (callSummary?.sms_sent ?? false) : escalationDetected,
+      org_id: agentType === "b2b" ? org_id : null,
       refill_needed,
       refill_medicine,
-    });
+      agent_type: agentType,
+      protocol,
+    };
+
+    if (agentType === "b2c" && b2cExtract) {
+      callLogInsert.conversation_clarity = b2cExtract.conversation_clarity;
+      callLogInsert.medication_names_used = b2cExtract.medication_names_used;
+      callLogInsert.confusion_detected = b2cExtract.confusion_detected;
+    }
+
+    const insertError = await insertCallLogRow(callLogInsert);
 
     if (insertError) {
       console.error("Failed to insert call_logs row:", insertError);
@@ -551,7 +641,7 @@ export async function POST(request: NextRequest) {
         call_streak?: number;
       } = {};
 
-      if (memoryNotes) {
+      if (agentType === "b2b" && memoryNotes) {
         memoryUpdate.last_call_notes = memoryNotes;
       }
       if (medication_taken === "yes" || medication_taken === "no") {
@@ -574,6 +664,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (
+      agentType === "b2b" &&
       escalationDetected &&
       org_id &&
       patient?.id &&
@@ -623,7 +714,7 @@ export async function POST(request: NextRequest) {
     const canSendSms =
       hasTwilioCredentials() && hasFamilyPhoneNumber(familySmsTo);
 
-    if (canSendSms) {
+    if (agentType === "b2c" && canSendSms) {
       const patientName = patient_name !== "Unknown" ? patient_name : "Unhe";
       const patientPhone = patient?.phone ?? caller_phone;
 
@@ -670,6 +761,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (
+      agentType === "b2b" &&
       refill_needed &&
       org_id &&
       hasTwilioCredentials() &&

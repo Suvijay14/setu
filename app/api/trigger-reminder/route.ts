@@ -44,6 +44,7 @@ async function triggerBolnaCall(
       agent_id: agentId,
       recipient_phone_number: patient.phone,
       user_data: {
+        agent_type: patient.org_id ? "b2b" : "b2c",
         patient_name: patient.name || "ji",
         family_name: "aapke ghar walon",
         medications: patient.medications || "apni dawai",

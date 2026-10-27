@@ -12,6 +12,15 @@ export type RefillIntentExtract = {
   medicine: string | null;
 };
 
+export type B2cCallExtract = {
+  medication_taken: "yes" | "no" | "unclear";
+  mood: string | null;
+  emergency: boolean;
+  conversation_clarity: string | null;
+  medication_names_used: string[];
+  confusion_detected: boolean;
+};
+
 function parseGroqJson<T>(content: string): T | null {
   const jsonText = content
     .replace(/^```json\s*/i, "")
@@ -151,5 +160,74 @@ medicine: the medicine they said is finished; if multiple, pick the one they emp
   return {
     refill_needed,
     medicine: refill_needed ? medicine : null,
+  };
+}
+
+export async function extractB2cCallFields(
+  transcript: string,
+): Promise<B2cCallExtract | null> {
+  if (!transcript) return null;
+
+  const content = await groqChat(
+    `Analyze this Hindi family/eldercare voice call (Setu B2C).
+
+Transcript:
+${transcript}
+
+Return ONLY valid JSON:
+{
+  "medication_taken": "yes" | "no" | "unclear",
+  "mood": "happy/neutral/sad/anxious/confused or null",
+  "emergency": true or false,
+  "conversation_clarity": "clear" | "partial" | "confused",
+  "medication_names_used": ["exact medicine names or Hindi variants the patient said"],
+  "confusion_detected": true or false
+}
+
+medication_taken: yes only if they clearly confirmed taking medicine today/this dose.
+emergency: chest pain, fall, breathing trouble, severe distress.
+confusion_detected: true if patient repeated themselves, misunderstood the agent, or looped on names/times.`,
+    280,
+  );
+
+  if (!content) {
+    console.error("Groq B2C call extract failed or empty");
+    return null;
+  }
+
+  const parsed = parseGroqJson<{
+    medication_taken?: string;
+    mood?: string | null;
+    emergency?: boolean;
+    conversation_clarity?: string | null;
+    medication_names_used?: unknown;
+    confusion_detected?: boolean;
+  }>(content);
+
+  if (!parsed) {
+    console.error("extractB2cCallFields parse failed");
+    return null;
+  }
+
+  const med = parsed.medication_taken?.toLowerCase();
+  const medication_taken =
+    med === "yes" || med === "no" || med === "unclear" ? med : "unclear";
+
+  const medication_names_used = Array.isArray(parsed.medication_names_used)
+    ? parsed.medication_names_used.filter(
+        (x): x is string => typeof x === "string" && x.trim().length > 0,
+      )
+    : [];
+
+  return {
+    medication_taken,
+    mood: typeof parsed.mood === "string" ? parsed.mood : null,
+    emergency: parsed.emergency === true,
+    conversation_clarity:
+      typeof parsed.conversation_clarity === "string"
+        ? parsed.conversation_clarity
+        : null,
+    medication_names_used,
+    confusion_detected: parsed.confusion_detected === true,
   };
 }

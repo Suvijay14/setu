@@ -36,6 +36,9 @@ export interface CallLog {
   refill_medicine: string | null;
   agent_type: string | null;
   protocol: string | null;
+  conversation_clarity: string | null;
+  medication_names_used: string[] | null;
+  confusion_detected: boolean | null;
   created_at: string;
 }
 

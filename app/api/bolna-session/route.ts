@@ -1,6 +1,7 @@
 const BOLNA_SESSION_URL = "https://api.bolna.ai/web-call/session";
 
 const DEFAULT_USER_DATA = {
+  agent_type: "b2c",
   patient_name: "Guest",
   medications: "BP tablet",
   patient_phone: "demo",
