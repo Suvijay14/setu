@@ -9,6 +9,7 @@ type SetupBody = {
   reminder_time?: string;
   location?: string;
   family_phone?: string;
+  org_id?: string;
 };
 
 function normalizeMedications(raw: string): string {
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest) {
   }
 
   const medications = normalizeMedications(medicationsRaw);
+  const org_id = body.org_id?.trim();
 
   const patient = await createOrUpdatePatient(parent_phone, {
     name: parent_name,
@@ -67,6 +69,7 @@ export async function POST(request: NextRequest) {
     family_phone,
     location,
     onboarded: true,
+    ...(org_id ? { org_id } : {}),
   });
 
   if (!patient) {

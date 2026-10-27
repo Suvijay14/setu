@@ -16,6 +16,7 @@ export interface Patient {
   child_summary_frequency: string | null;
   child_summary_time: string | null;
   last_summary_sent_at: string | null;
+  org_id: string | null;
 }
 
 export type PatientUpdateData = Partial<{
@@ -30,6 +31,7 @@ export type PatientUpdateData = Partial<{
   child_summary_frequency: string;
   child_summary_time: string;
   last_summary_sent_at: string;
+  org_id: string;
 }>;
 
 export interface OnboardingExtract {

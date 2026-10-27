@@ -500,6 +500,14 @@ export default function SetuLanding() {
             <span className="text-alert-coral">❤️</span>
             <span>for Indian families worldwide</span>
           </p>
+          <p className="mt-3">
+            <Link
+              href="/org"
+              className="text-[11px] text-zinc-500 underline-offset-2 hover:text-amber-300/80 hover:underline"
+            >
+              For clinics →
+            </Link>
+          </p>
         </footer>
       </main>
 

@@ -30,6 +30,7 @@ export interface CallLog {
   summary: string | null;
   emergency: boolean | null;
   sms_sent: boolean | null;
+  org_id: string | null;
   created_at: string;
 }
 

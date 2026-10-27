@@ -553,6 +553,8 @@ export async function POST(request: NextRequest) {
       caller_phone,
     });
 
+    const org_id = patient?.org_id ?? null;
+
     const { error: insertError } = await supabase.from("call_logs").insert({
       call_id,
       patient_name,
@@ -566,6 +568,7 @@ export async function POST(request: NextRequest) {
       summary: callSummary?.summary ?? null,
       emergency: callSummary?.emergency ?? false,
       sms_sent: callSummary?.sms_sent ?? false,
+      org_id,
     });
 
     if (insertError) {
