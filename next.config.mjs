@@ -15,6 +15,9 @@ const nextConfig = {
     NEXT_PUBLIC_BOLNA_AGENT_ID_B2C: process.env.NEXT_PUBLIC_BOLNA_AGENT_ID_B2C,
     NEXT_PUBLIC_BOLNA_AGENT_ID_B2B: process.env.NEXT_PUBLIC_BOLNA_AGENT_ID_B2B,
     INBOUND_BOLNA_AGENT_ID: process.env.INBOUND_BOLNA_AGENT_ID,
+    NEXT_PUBLIC_BOLNA_AGENT_ID_INBOUND:
+      process.env.INBOUND_BOLNA_AGENT_ID ??
+      process.env.NEXT_PUBLIC_BOLNA_AGENT_ID_INBOUND,
   },
   images: {
     remotePatterns: [
