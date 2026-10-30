@@ -33,3 +33,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*
+
+# design reference exports (not part of Next app)
+/stitch_setu_voice_ai_landing_page*/

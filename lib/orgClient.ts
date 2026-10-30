@@ -18,6 +18,8 @@ export type OrgPatientRow = {
   last_call_status: string | null;
   last_medication_taken: string | null;
   adherence_badge: "good" | "watch" | "missed" | "none";
+  risk_level: "high" | "medium" | "low" | "none";
+  risk_reason: string;
 };
 
 export type OrgDashboardStats = {
@@ -48,6 +50,36 @@ export function adherenceBadgeClass(
       return "bg-rose-500/15 text-rose-300 border-rose-500/30";
     default:
       return "bg-zinc-800 text-zinc-400 border-zinc-700";
+  }
+}
+
+export function riskBadgeClass(
+  level: OrgPatientRow["risk_level"],
+): string {
+  switch (level) {
+    case "high":
+      return "bg-red-900 text-red-300 border-red-700";
+    case "medium":
+      return "bg-yellow-900 text-yellow-300 border-yellow-700";
+    case "low":
+      return "bg-green-900 text-green-300 border-green-700";
+    default:
+      return "bg-gray-800 text-gray-400 border-gray-700";
+  }
+}
+
+export function formatRiskBadgeLabel(
+  level: OrgPatientRow["risk_level"],
+): string {
+  switch (level) {
+    case "high":
+      return "🔴 High Risk";
+    case "medium":
+      return "🟡 Medium Risk";
+    case "low":
+      return "🟢 Low Risk";
+    default:
+      return "⚪ No Data";
   }
 }
 

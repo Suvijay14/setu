@@ -1,6 +1,7 @@
 import type { CallLog } from "@/lib/types";
 import type { OrgDashboardStats, OrgPatientRow } from "@/lib/orgClient";
 import { countRefillsNeeded } from "@/lib/refills";
+import { computePatientRisk } from "@/lib/patientRisk";
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -69,6 +70,11 @@ export function enrichOrgPatients(
     const nameKey = patient.name?.trim() ?? "";
     const latest = nameKey ? latestByName.get(nameKey) : undefined;
 
+    const { level: risk_level, reason: risk_reason } = computePatientRisk(
+      calls,
+      patient.name,
+    );
+
     let adherence_badge: OrgPatientRow["adherence_badge"] = "none";
     if (latest) {
       if (isMissedStatus(latest.status)) {
@@ -94,6 +100,8 @@ export function enrichOrgPatients(
       last_call_status: latest?.status ?? null,
       last_medication_taken: latest?.medication_taken ?? null,
       adherence_badge,
+      risk_level,
+      risk_reason,
     };
   });
 }

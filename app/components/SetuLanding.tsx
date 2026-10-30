@@ -80,7 +80,7 @@ export default function SetuLanding() {
                 </span>
               </div>
               <span className="text-[10px] leading-tight text-slate-400">
-                Verified adherence. Every patient. Every day.
+                NABH-ready voice follow-up for hospitals
               </span>
             </div>
           </div>
@@ -104,9 +104,8 @@ export default function SetuLanding() {
             <span className="text-primary-container">Setu verified.</span>
           </h1>
           <p className="mb-6 px-1 text-center text-sm leading-relaxed text-slate-300">
-            A Hindi voice agent that calls chronic-care patients daily, confirms
-            medication, detects distress, and sends outcome data — on any phone,
-            no smartphone needed.
+            AI-powered Hindi voice care for Indian hospitals. Patients call in.
+            Discharged patients get called back. Zero extra staff.
           </p>
           <div className="mb-5 flex w-full flex-col gap-2.5">
             <Link
@@ -301,7 +300,47 @@ export default function SetuLanding() {
               title="Call Memory"
               body="Remembers yesterday's conversation and references it on the next call."
             />
+            <FeatureCard
+              emoji="📋"
+              title="Instant Appointment Booking via Call"
+              body="Patients call your clinic line in Hindi; symptoms and preferred time land in your org dashboard."
+            />
           </div>
+        </section>
+
+        <section className="border-y border-slate-800/80 bg-surface-level-1 px-4 py-8">
+          <div className="mb-6 text-center">
+            <span className="text-xs font-semibold uppercase tracking-wider text-primary-container">
+              Two-way voice care
+            </span>
+            <h2 className="mt-1 text-xl font-bold tracking-tight text-white">
+              Inbound + outbound on one platform
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <div className="rounded-xl border border-slate-800 bg-surface-level-2 p-5">
+              <h3 className="mb-2 text-sm font-semibold text-white">
+                Patients Call In
+              </h3>
+              <p className="text-xs leading-relaxed text-slate-400">
+                Patients call +91-8064-262082, describe symptoms in Hindi, and
+                get an appointment logged instantly.
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-surface-level-2 p-5">
+              <h3 className="mb-2 text-sm font-semibold text-white">
+                You Call Them Back
+              </h3>
+              <p className="text-xs leading-relaxed text-slate-400">
+                Discharged patients receive automated Hindi follow-up calls.
+                Missed doses and distress get flagged to your team immediately.
+              </p>
+            </div>
+          </div>
+          <p className="mt-5 text-center text-xs font-medium text-slate-400">
+            Handling inbound appointments + post-discharge follow-up for pilot
+            clinics in Delhi NCR · Oct 2026
+          </p>
         </section>
 
         <section className="px-4 py-8">

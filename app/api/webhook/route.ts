@@ -670,6 +670,24 @@ export async function POST(request: NextRequest) {
       patient?.id &&
       typeof patient.id === "string"
     ) {
+      const escalationPhone =
+        patient.phone ??
+        (caller_phone && !caller_phone.startsWith("temp_") ? caller_phone : null) ??
+        "Unknown";
+      const escalationSummary =
+        callSummary?.summary ?? escalation_reason ?? patient_concern ?? "Distress on call";
+
+      void supabase.from("appointments").insert({
+        patient_name,
+        phone: escalationPhone,
+        doctor: "Dr. Sharma",
+        symptoms: escalationSummary,
+        preferred_time: "Follow-up required",
+        source: "escalation",
+        status: "pending",
+        clinic_name: "Apollo Clinic, Delhi",
+      });
+
       const escalateUrl = `${getAppBaseUrl()}/api/escalate/sms`;
       void fetch(escalateUrl, {
         method: "POST",

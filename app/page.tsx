@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import RoiCalculator from "./components/RoiCalculator";
 import SetuLanding from "./components/SetuLanding";
 
 type UserType = "family" | "hospital";
@@ -74,9 +75,31 @@ export default function Home() {
         <h1 className="mx-auto max-w-lg text-2xl font-bold leading-tight tracking-tight text-white sm:text-3xl">
           Setu — AI Voice Follow-Up for Indian Healthcare
         </h1>
-        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-400">
-          For families caring for elderly parents, or hospitals managing
-          discharged patients.
+        <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">
+          AI-powered Hindi voice follow-up for Indian hospitals. Reduce
+          readmissions. Stay NABH compliant. Zero extra staff.
+        </p>
+        <div className="mx-auto mt-5 flex max-w-2xl flex-wrap items-center justify-center gap-2">
+          {[
+            "📞 Automated Hindi Calls",
+            "🏥 NABH Audit Trail",
+            "📊 Readmission Risk Tracking",
+          ].map((label) => (
+            <span
+              key={label}
+              className="rounded-full border border-slate-700 bg-surface-level-1 px-3 py-1.5 text-xs font-medium text-slate-200"
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+        <p className="mx-auto mt-4 text-xs text-slate-500">
+          Piloting with 3 hospitals in Delhi NCR · Oct 2026
+        </p>
+        <RoiCalculator />
+        <p className="mx-auto mt-4 max-w-xl px-2 text-xs leading-relaxed text-slate-500">
+          Trusted for compliance: All calls logged with timestamp, medication
+          adherence tracked, and exportable for NABH audit.
         </p>
         <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
           <button

@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import type { CallLog } from "@/lib/types";
 import { formatDashboardDateTime } from "@/lib/dashboardClient";
+import { downloadPatientCallReport } from "@/lib/generatePatientPDF";
 import type { DayAdherence } from "@/lib/patientAdherence";
 
 export type OrgPatientDetail = {
+  org: { name: string };
   patient: {
     id: string;
     phone: string;
@@ -15,6 +17,7 @@ export type OrgPatientDetail = {
     reminder_time: string | null;
     protocol: string | null;
     is_active: boolean;
+    created_at?: string | null;
   };
   calls: CallLog[];
   adherencePercent7d: number | null;
@@ -92,6 +95,7 @@ export default function OrgPatientModal({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [markingInactive, setMarkingInactive] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const loadDetail = useCallback(async () => {
     setLoading(true);
@@ -106,7 +110,10 @@ export default function OrgPatientModal({
       setLoading(false);
       return;
     }
-    setDetail(body);
+    setDetail({
+      ...body,
+      org: body.org ?? { name: "Organization" },
+    });
     setLoading(false);
   }, [orgId, patientId]);
 
@@ -161,6 +168,44 @@ export default function OrgPatientModal({
       ?.split(/[,;\n]+/)
       .map((m) => m.trim())
       .filter(Boolean) ?? [];
+
+  const recentCalls = detail?.calls.slice(0, 5) ?? [];
+
+  const handleDownloadReport = async () => {
+    if (!detail) return;
+    setDownloadingPdf(true);
+    setError(null);
+    try {
+      const dischargeDate = detail.patient.created_at
+        ? new Intl.DateTimeFormat("en-IN", {
+            timeZone: "Asia/Kolkata",
+            dateStyle: "medium",
+          }).format(new Date(detail.patient.created_at))
+        : null;
+
+      await downloadPatientCallReport({
+        orgName: detail.org.name,
+        generatedAt: new Date(),
+        patient: {
+          name: detail.patient.name,
+          phone: detail.patient.phone,
+          age: null,
+          condition: detail.patient.protocol,
+          medications: detail.patient.medications,
+          dischargeDate,
+          doctor: null,
+          nextScheduledCall: detail.nextScheduledCall?.label ?? null,
+        },
+        calls: detail.calls,
+        adherencePercent7d: detail.adherencePercent7d,
+        adherenceByDay: detail.adherenceByDay,
+      });
+    } catch {
+      setError("Could not generate PDF. Please try again.");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   return (
     <div
@@ -324,11 +369,11 @@ export default function OrgPatientModal({
                 <h3 className="mb-3 text-xs font-medium uppercase tracking-wide text-zinc-500">
                   Call history (last 5)
                 </h3>
-                {detail.calls.length === 0 ? (
+                {recentCalls.length === 0 ? (
                   <p className="text-sm text-zinc-500">No calls yet.</p>
                 ) : (
                   <ul className="space-y-3">
-                    {detail.calls.map((call) => {
+                    {recentCalls.map((call) => {
                       const escalation = escalationText(call);
                       return (
                         <li
@@ -376,18 +421,30 @@ export default function OrgPatientModal({
                 )}
               </div>
 
-              <button
-                type="button"
-                disabled={markingInactive || !detail.patient.is_active}
-                onClick={() => void handleMarkInactive()}
-                className="w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {markingInactive
-                  ? "Updating…"
-                  : detail.patient.is_active
-                    ? "Mark as inactive"
-                    : "Already inactive"}
-              </button>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  disabled={downloadingPdf}
+                  onClick={() => void handleDownloadReport()}
+                  className="flex-1 rounded-lg border border-white/80 bg-transparent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {downloadingPdf
+                    ? "Generating PDF…"
+                    : "Download Report (PDF)"}
+                </button>
+                <button
+                  type="button"
+                  disabled={markingInactive || !detail.patient.is_active}
+                  onClick={() => void handleMarkInactive()}
+                  className="flex-1 rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {markingInactive
+                    ? "Updating…"
+                    : detail.patient.is_active
+                      ? "Mark as inactive"
+                      : "Already inactive"}
+                </button>
+              </div>
             </>
           ) : null}
         </div>

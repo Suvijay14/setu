@@ -18,9 +18,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
   }
 
   const patientSelectWithActive =
-    "id, phone, name, location, medications, reminder_time, protocol, org_id, is_active, onboarded";
+    "id, phone, name, location, medications, reminder_time, protocol, org_id, is_active, onboarded, created_at";
   const patientSelectLegacy =
-    "id, phone, name, location, medications, reminder_time, protocol, org_id, onboarded";
+    "id, phone, name, location, medications, reminder_time, protocol, org_id, onboarded, created_at";
 
   let patientResult = await supabase
     .from("patients")
@@ -53,12 +53,18 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Patient not found" }, { status: 404 });
   }
 
+  const { data: orgRow } = await supabase
+    .from("organizations")
+    .select("name")
+    .eq("id", orgId)
+    .maybeSingle();
+
   let callQuery = supabase
     .from("call_logs")
     .select("*")
     .eq("org_id", orgId)
     .order("created_at", { ascending: false })
-    .limit(5);
+    .limit(500);
 
   if (patient.name) {
     callQuery = callQuery.eq("patient_name", patient.name);
@@ -98,7 +104,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
     patient.reminder_time as string | null,
   );
 
+  const createdAt =
+    typeof patient.created_at === "string" ? patient.created_at : null;
+
   return NextResponse.json({
+    org: {
+      name: (orgRow?.name as string | undefined) ?? "Organization",
+    },
     patient: {
       id: patient.id as string,
       phone: patient.phone as string,
@@ -108,6 +120,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       reminder_time: (patient.reminder_time as string | null) ?? null,
       protocol: (patient.protocol as string | null) ?? null,
       is_active: patient.is_active !== false,
+      created_at: createdAt,
     },
     calls,
     adherencePercent7d: adherencePercent,

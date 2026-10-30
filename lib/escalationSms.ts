@@ -1,4 +1,5 @@
 import twilio from "twilio";
+import { buildEscalationAppointmentSmsBody } from "@/lib/appointments";
 import { supabase } from "@/lib/supabase";
 
 export type EscalationSmsPayload = {
@@ -24,18 +25,22 @@ export function first80Words(text: string): string {
   return words.slice(0, 80).join(" ");
 }
 
-export function buildEscalationSmsBody(
-  patientName: string,
-  escalationReason: string,
-  transcript: string,
-  patientId: string,
-): string {
-  const snippet = first80Words(transcript || escalationReason);
-  const viewUrl = `${getAppBaseUrl()}/org?patient_id=${encodeURIComponent(patientId)}`;
-  return `🚨 Setu Alert
-${patientName} reported: ${escalationReason.slice(0, 120)}
-Transcript: ${snippet}
-View: ${viewUrl}`;
+export function buildEscalationSmsBody(input: {
+  patientName: string;
+  phone: string;
+  callSummary: string;
+  dischargeDate?: string;
+  doctor?: string;
+  clinicName?: string;
+}): string {
+  return buildEscalationAppointmentSmsBody({
+    patient_name: input.patientName,
+    phone: input.phone,
+    call_summary: first80Words(input.callSummary),
+    discharge_date: input.dischargeDate?.trim() || "recent",
+    doctor: input.doctor?.trim() || "Dr. Sharma",
+    clinic_name: input.clinicName?.trim() || "Apollo Clinic, Delhi",
+  });
 }
 
 function twilioFromNumber(): string | null {
@@ -80,7 +85,7 @@ export async function sendEscalationSmsToClinic(
 
   const { data: patient, error: patientError } = await supabase
     .from("patients")
-    .select("id, org_id")
+    .select("id, org_id, phone")
     .eq("id", patient_id)
     .maybeSingle();
 
@@ -88,12 +93,16 @@ export async function sendEscalationSmsToClinic(
     return { sent: false, error: "Patient not found for organization" };
   }
 
-  const body = buildEscalationSmsBody(
-    patient_name,
-    escalation_reason,
-    call_transcript,
-    patient_id,
-  );
+  const phone =
+    typeof patient.phone === "string" && patient.phone.trim()
+      ? patient.phone.trim()
+      : "Unknown";
+
+  const body = buildEscalationSmsBody({
+    patientName: patient_name,
+    phone,
+    callSummary: call_transcript || escalation_reason,
+  });
 
   const client = twilio(
     process.env.TWILIO_ACCOUNT_SID,

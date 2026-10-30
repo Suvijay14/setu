@@ -1,0 +1,194 @@
+import type { DayAdherence } from "@/lib/patientAdherence";
+import type { CallLog } from "@/lib/types";
+
+export type PatientReportPdfData = {
+  orgName: string;
+  generatedAt: Date;
+  patient: {
+    name: string | null;
+    phone: string;
+    age: string | null;
+    condition: string | null;
+    medications: string | null;
+    dischargeDate: string | null;
+    doctor: string | null;
+    nextScheduledCall: string | null;
+  };
+  calls: CallLog[];
+  adherencePercent7d: number | null;
+  adherenceByDay: DayAdherence[];
+};
+
+function formatReportDateTime(date: Date): string {
+  return new Intl.DateTimeFormat("en-IN", {
+    timeZone: "Asia/Kolkata",
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function formatCallDateTime(iso: string): string {
+  return new Intl.DateTimeFormat("en-IN", {
+    timeZone: "Asia/Kolkata",
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(iso));
+}
+
+function callEscalationLabel(call: CallLog): string {
+  if (call.concern?.trim()) return call.concern.trim().slice(0, 80);
+  if (call.escalation_flag || call.emergency) return "Emergency flagged";
+  return "—";
+}
+
+function adherenceDayLabel(taken: DayAdherence["taken"]): string {
+  if (taken === "none") return "no call";
+  return taken;
+}
+
+function safeFileName(name: string | null): string {
+  const base = (name ?? "patient").replace(/[^\w\-]+/g, "_").slice(0, 40);
+  return `setu-report-${base}.pdf`;
+}
+
+export async function downloadPatientCallReport(
+  data: PatientReportPdfData,
+): Promise<void> {
+  const { jsPDF } = await import("jspdf");
+  const { default: autoTable } = await import("jspdf-autotable");
+
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 40;
+  let y = margin;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(28);
+  doc.text("SETU", margin, y);
+  y += 28;
+
+  doc.setFontSize(16);
+  doc.text("Patient Follow-Up Report", margin, y);
+  y += 22;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text(
+    `Generated on: ${formatReportDateTime(data.generatedAt)}`,
+    margin,
+    y,
+  );
+  y += 14;
+  doc.text(`Organization: ${data.orgName}`, margin, y);
+  y += 24;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("Patient", margin, y);
+  y += 16;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  const patientLines = [
+    `Name: ${data.patient.name ?? "—"}`,
+    `Phone: ${data.patient.phone}`,
+    `Age: ${data.patient.age ?? "—"}`,
+    `Condition: ${data.patient.condition ?? "—"}`,
+    `Medications: ${data.patient.medications ?? "—"}`,
+    `Discharge Date: ${data.patient.dischargeDate ?? "—"}`,
+    `Doctor: ${data.patient.doctor ?? "—"}`,
+    `Next scheduled call: ${data.patient.nextScheduledCall ?? "—"}`,
+  ];
+  for (const line of patientLines) {
+    const wrapped = doc.splitTextToSize(line, pageWidth - margin * 2);
+    doc.text(wrapped, margin, y);
+    y += wrapped.length * 12 + 2;
+  }
+  y += 10;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("Call history", margin, y);
+  y += 8;
+
+  if (data.calls.length === 0) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("No calls completed yet", margin, y + 12);
+    y += 28;
+  } else {
+    autoTable(doc, {
+      startY: y + 4,
+      head: [
+        [
+          "Date/Time",
+          "Duration",
+          "Medication",
+          "Mood",
+          "Summary",
+          "Escalation",
+        ],
+      ],
+      body: data.calls.map((call) => [
+        formatCallDateTime(call.created_at),
+        call.duration != null ? `${call.duration}s` : "—",
+        call.medication_taken ?? "—",
+        call.mood ?? "—",
+        (call.summary ?? "—").slice(0, 60),
+        callEscalationLabel(call),
+      ]),
+      styles: { fontSize: 8, cellPadding: 4 },
+      headStyles: { fillColor: [10, 15, 30] },
+      margin: { left: margin, right: margin },
+    });
+    y =
+      (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable
+        ?.finalY ?? y + 40;
+    y += 20;
+  }
+
+  if (y > doc.internal.pageSize.getHeight() - 120) {
+    doc.addPage();
+    y = margin;
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("7-day adherence", margin, y);
+  y += 16;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  const adherencePct =
+    data.adherencePercent7d !== null ? `${data.adherencePercent7d}%` : "—";
+  doc.text(`Adherence: ${adherencePct}`, margin, y);
+  y += 14;
+
+  for (const day of data.adherenceByDay) {
+    doc.text(
+      `${day.date}: ${adherenceDayLabel(day.taken)}`,
+      margin + 8,
+      y,
+    );
+    y += 12;
+  }
+  y += 16;
+
+  const footerY = doc.internal.pageSize.getHeight() - 50;
+  doc.setFontSize(9);
+  doc.setTextColor(100, 100, 100);
+  doc.text(
+    "This report is auto-generated by Setu AI Follow-Up System",
+    margin,
+    footerY,
+  );
+  doc.text("For NABH audit and compliance purposes", margin, footerY + 12);
+  doc.text(
+    `Report timestamp: ${formatReportDateTime(data.generatedAt)}`,
+    margin,
+    footerY + 24,
+  );
+  doc.setTextColor(0, 0, 0);
+
+  doc.save(safeFileName(data.patient.name));
+}

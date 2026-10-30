@@ -10,12 +10,15 @@ import {
   rowHighlightClass,
 } from "@/lib/dashboardClient";
 import { sortOrgDashboardCalls } from "@/lib/sortOrgCalls";
+import OrgAppointmentsTab from "@/app/components/OrgAppointmentsTab";
 import OrgPatientModal from "@/app/components/OrgPatientModal";
 import { countCsvPatientDataRows } from "@/lib/csvPatients";
 import {
   ORG_STORAGE_KEY,
   adherenceBadgeClass,
   formatOrgBadgeLabel,
+  formatRiskBadgeLabel,
+  riskBadgeClass,
   type OrgDashboardResponse,
   type OrgPatientRow,
   type StoredOrg,
@@ -102,6 +105,11 @@ function OrgDashboardPageInner() {
     null,
   );
   const [liveConnected, setLiveConnected] = useState(false);
+  const [orgTab, setOrgTab] = useState<"patients" | "appointments">("patients");
+  const [appointmentCount, setAppointmentCount] = useState(0);
+  const [riskFilter, setRiskFilter] = useState<"all" | "high" | "attention">(
+    "all",
+  );
 
   const openDashboard = useCallback((data: OrgDashboardResponse) => {
     setView({
@@ -164,6 +172,16 @@ function OrgDashboardPageInner() {
   }, [searchParams, view.kind]);
 
   const dashboardOrgId = view.kind === "dashboard" ? view.org.id : null;
+
+  useEffect(() => {
+    if (!dashboardOrgId) return;
+    void fetch("/api/appointments")
+      .then((response) => response.json())
+      .then((body: { appointments?: unknown[] }) => {
+        setAppointmentCount(body.appointments?.length ?? 0);
+      })
+      .catch(() => setAppointmentCount(0));
+  }, [dashboardOrgId]);
 
   const sortedCalls = useMemo(() => {
     if (view.kind !== "dashboard") return [];
@@ -391,6 +409,14 @@ function OrgDashboardPageInner() {
     );
     const refillPreview = refillEntries.slice(0, 5);
 
+    const filteredPatients = patients.filter((row) => {
+      if (riskFilter === "high") return row.risk_level === "high";
+      if (riskFilter === "attention") {
+        return row.risk_level === "high" || row.risk_level === "medium";
+      }
+      return true;
+    });
+
     return (
       <div className="min-h-screen bg-zinc-950 text-zinc-100">
         {selectedPatientId ? (
@@ -599,12 +625,75 @@ function OrgDashboardPageInner() {
             ) : null}
           </section>
 
+          <div className="mb-4 flex flex-wrap gap-2 border-b border-zinc-800 pb-3">
+            <button
+              type="button"
+              onClick={() => setOrgTab("patients")}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                orgTab === "patients"
+                  ? "bg-zinc-100 text-zinc-950"
+                  : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+              }`}
+            >
+              Patients
+            </button>
+            <button
+              type="button"
+              onClick={() => setOrgTab("appointments")}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                orgTab === "appointments"
+                  ? "bg-zinc-100 text-zinc-950"
+                  : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+              }`}
+            >
+              Appointments ({appointmentCount})
+            </button>
+          </div>
+
+          {orgTab === "appointments" ? (
+            <div className="mb-8 overflow-hidden rounded-xl border border-zinc-800">
+              <div className="border-b border-zinc-800 bg-zinc-900/90 px-4 py-3">
+                <h2 className="text-sm font-semibold text-white">
+                  Appointment requests
+                </h2>
+                <p className="mt-0.5 text-xs text-zinc-500">
+                  Inbound line + escalation follow-ups
+                </p>
+              </div>
+              <OrgAppointmentsTab onCountChange={setAppointmentCount} />
+            </div>
+          ) : null}
+
+          {orgTab === "patients" ? (
+          <>
           <div className="mb-8 overflow-hidden rounded-xl border border-zinc-800">
             <div className="border-b border-zinc-800 bg-zinc-900/90 px-4 py-3">
-              <h2 className="text-sm font-semibold text-white">Patients</h2>
-              <p className="mt-0.5 text-xs text-zinc-500">
-                Click a row for full history, adherence, and medications
-              </p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-white">Patients</h2>
+                  <p className="mt-0.5 text-xs text-zinc-500">
+                    Click a row for full history, adherence, and medications
+                  </p>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-zinc-400">
+                  <span className="shrink-0 font-medium uppercase tracking-wide">
+                    Show
+                  </span>
+                  <select
+                    value={riskFilter}
+                    onChange={(e) =>
+                      setRiskFilter(
+                        e.target.value as "all" | "high" | "attention",
+                      )
+                    }
+                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-200 focus:border-primary-container focus:outline-none"
+                  >
+                    <option value="all">All</option>
+                    <option value="high">High Risk Only</option>
+                    <option value="attention">Needs Attention</option>
+                  </select>
+                </label>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-zinc-800 text-left text-sm">
@@ -614,20 +703,30 @@ function OrgDashboardPageInner() {
                     <th className="px-4 py-3 font-medium">Phone</th>
                     <th className="px-4 py-3 font-medium">Last call</th>
                     <th className="px-4 py-3 font-medium">Adherence</th>
+                    <th className="px-4 py-3 font-medium">Risk</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/80 bg-zinc-950">
                   {patients.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={4}
+                        colSpan={5}
                         className="px-4 py-10 text-center text-zinc-500"
                       >
                         No patients linked to this organization yet.
                       </td>
                     </tr>
+                  ) : filteredPatients.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="px-4 py-10 text-center text-zinc-500"
+                      >
+                        No patients match this risk filter.
+                      </td>
+                    </tr>
                   ) : (
-                    patients.map((row) => (
+                    filteredPatients.map((row) => (
                       <tr
                         key={row.id}
                         role="button"
@@ -662,6 +761,14 @@ function OrgDashboardPageInner() {
                             className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${adherenceBadgeClass(row.adherence_badge)}`}
                           >
                             {formatOrgBadgeLabel(row.adherence_badge)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            title={row.risk_reason}
+                            className={`inline-flex cursor-help rounded-full border px-2.5 py-0.5 text-xs font-medium ${riskBadgeClass(row.risk_level)}`}
+                          >
+                            {formatRiskBadgeLabel(row.risk_level)}
                           </span>
                         </td>
                       </tr>
@@ -737,6 +844,8 @@ function OrgDashboardPageInner() {
               </table>
             </div>
           </div>
+          </>
+          ) : null}
         </div>
       </div>
     );
