@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { clearSetuUserType } from "@/lib/setuSession";
 import type { CallLog } from "@/lib/types";
 import {
   computeDashboardStats,
@@ -64,6 +66,7 @@ async function fetchDashboard(familyPhone: string): Promise<
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [phoneInput, setPhoneInput] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [view, setView] = useState<ViewState>({ kind: "loading" });
@@ -166,14 +169,10 @@ export default function DashboardPage() {
     setSubmitError("Something went wrong. Please try again.");
   };
 
-  const handleSignOut = () => {
+  const handleBackToHome = () => {
     localStorage.removeItem(FAMILY_PHONE_STORAGE_KEY);
-    setPhoneInput("");
-    setSubmitError(null);
-    setFamilyMessage("");
-    setMessageSuccess(false);
-    setMessageError(null);
-    setView({ kind: "login" });
+    clearSetuUserType();
+    router.push("/");
   };
 
   const handleSaveSummarySettings = async (event: React.FormEvent) => {
@@ -291,12 +290,6 @@ export default function DashboardPage() {
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
               <Link
-                href="/"
-                className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
-              >
-                Setu home
-              </Link>
-              <Link
                 href="/org"
                 className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
               >
@@ -304,10 +297,10 @@ export default function DashboardPage() {
               </Link>
               <button
                 type="button"
-                onClick={handleSignOut}
+                onClick={handleBackToHome}
                 className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
               >
-                Sign out
+                Sign out / Back to Home
               </button>
             </div>
           </header>
@@ -591,12 +584,13 @@ export default function DashboardPage() {
           >
             Register a new parent →
           </Link>
-          <Link
-            href="/"
+          <button
+            type="button"
+            onClick={handleBackToHome}
             className="text-zinc-500 underline-offset-2 hover:text-zinc-300 hover:underline"
           >
-            ← Back to Setu home
-          </Link>
+            ← Sign out / Back to Home
+          </button>
           <Link
             href="/org"
             className="text-zinc-500 underline-offset-2 hover:text-zinc-300 hover:underline"

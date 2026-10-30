@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { clearSetuUserType } from "@/lib/setuSession";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { CallLog } from "@/lib/types";
 import {
@@ -87,6 +88,7 @@ async function fetchOrgDashboard(
 }
 
 function OrgDashboardPageInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [codeInput, setCodeInput] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -306,15 +308,16 @@ function OrgDashboardPageInner() {
     [openDashboard],
   );
 
-  const handleSignOut = () => {
+  const handleBackToHome = () => {
     localStorage.removeItem(ORG_STORAGE_KEY);
+    clearSetuUserType();
     setCodeInput("");
     setLoginError(null);
     setCsvFile(null);
     setUploadSuccessMessage(null);
     setUploadErrors([]);
     setUploadApiError(null);
-    setView({ kind: "login" });
+    router.push("/");
   };
 
   const handleCsvUpload = async () => {
@@ -452,12 +455,6 @@ function OrgDashboardPageInner() {
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
               <Link
-                href="/"
-                className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
-              >
-                Setu home
-              </Link>
-              <Link
                 href="/dashboard"
                 className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
               >
@@ -465,10 +462,10 @@ function OrgDashboardPageInner() {
               </Link>
               <button
                 type="button"
-                onClick={handleSignOut}
+                onClick={handleBackToHome}
                 className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
               >
-                Sign out
+                Sign out / Back to Home
               </button>
             </div>
           </header>
@@ -893,12 +890,13 @@ function OrgDashboardPageInner() {
         </form>
 
         <p className="mt-6 text-sm">
-          <Link
-            href="/"
+          <button
+            type="button"
+            onClick={handleBackToHome}
             className="text-emerald-500 underline-offset-2 hover:text-emerald-400 hover:underline"
           >
-            ← Back to Setu home
-          </Link>
+            ← Sign out / Back to Home
+          </button>
         </p>
       </div>
     </div>
