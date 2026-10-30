@@ -2,9 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-const READMISSION_REDUCTION = 0.3;
-const SETU_COST_PER_BED_YEAR = 8000;
-const BEDS_PER_30_PATIENTS = 30;
+const SETU_MONTHLY_COST = 2499;
 
 function formatInr(value: number): string {
   return new Intl.NumberFormat("en-IN", {
@@ -79,120 +77,99 @@ function SliderField({
 }
 
 export default function RoiCalculator() {
-  const [monthlyPatients, setMonthlyPatients] = useState(500);
-  const [readmissionRate, setReadmissionRate] = useState(18);
-  const [avgReadmissionCost, setAvgReadmissionCost] = useState(45000);
+  const [monthlyIncomingCalls, setMonthlyIncomingCalls] = useState(150);
+  const [missedCallPercent, setMissedCallPercent] = useState(30);
+  const [avgRevenuePerAppointment, setAvgRevenuePerAppointment] = useState(800);
 
   const metrics = useMemo(() => {
-    const monthlyReadmissions =
-      monthlyPatients * (readmissionRate / 100);
-    const monthlyReadmissionCost =
-      monthlyReadmissions * avgReadmissionCost;
-    const patientsSaved = monthlyReadmissions * READMISSION_REDUCTION;
-    const monthlySavings = patientsSaved * avgReadmissionCost;
-    const annualSavings = monthlySavings * 12;
-    const setuAnnualCost =
-      SETU_COST_PER_BED_YEAR * (monthlyPatients / BEDS_PER_30_PATIENTS);
-    const netRoi = annualSavings - setuAnnualCost;
+    const missedCallsPerMonth =
+      monthlyIncomingCalls * (missedCallPercent / 100);
+    const revenueLostPerMonth = missedCallsPerMonth * avgRevenuePerAppointment;
+    const recoverablePerMonth = revenueLostPerMonth;
     const roiMultiplier =
-      setuAnnualCost > 0 ? annualSavings / setuAnnualCost : 0;
+      SETU_MONTHLY_COST > 0 ? recoverablePerMonth / SETU_MONTHLY_COST : 0;
 
     return {
-      monthlyReadmissions,
-      monthlyReadmissionCost,
-      patientsSaved,
-      monthlySavings,
-      annualSavings,
-      setuAnnualCost,
-      netRoi,
+      missedCallsPerMonth,
+      revenueLostPerMonth,
+      recoverablePerMonth,
       roiMultiplier,
     };
-  }, [monthlyPatients, readmissionRate, avgReadmissionCost]);
+  }, [monthlyIncomingCalls, missedCallPercent, avgRevenuePerAppointment]);
 
   return (
     <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-slate-800 bg-surface-level-1 p-5 text-left shadow-xl sm:p-6">
       <div className="mb-5 text-center sm:text-left">
         <p className="text-xs font-semibold uppercase tracking-wider text-primary-container">
-          Hospital ROI
+          Clinic revenue
         </p>
         <h2 className="mt-1 text-lg font-bold text-white">
-          Readmission savings calculator
+          Missed Call Revenue Calculator
         </h2>
         <p className="mt-1 text-xs text-slate-400">
-          Estimate impact of 30% fewer readmissions with daily voice follow-up
+          Estimate revenue lost when peak-hour calls go unanswered — and what
+          inbound AI capture can recover
         </p>
       </div>
 
       <div className="space-y-5">
         <SliderField
-          id="roi-patients"
-          label="Monthly discharged patients"
-          value={monthlyPatients}
-          min={100}
-          max={5000}
-          step={50}
-          onChange={setMonthlyPatients}
+          id="mcr-incoming"
+          label="Monthly incoming calls"
+          value={monthlyIncomingCalls}
+          min={50}
+          max={500}
+          step={10}
+          onChange={setMonthlyIncomingCalls}
         />
         <SliderField
-          id="roi-rate"
-          label="Current readmission rate (%)"
-          value={readmissionRate}
-          min={5}
-          max={40}
+          id="mcr-missed"
+          label="% calls missed during peak hours"
+          value={missedCallPercent}
+          min={10}
+          max={50}
           step={1}
-          onChange={setReadmissionRate}
+          onChange={setMissedCallPercent}
           formatValue={(n) => `${n}%`}
         />
         <SliderField
-          id="roi-cost"
-          label="Average readmission cost (₹)"
-          value={avgReadmissionCost}
-          min={10000}
-          max={200000}
-          step={5000}
-          onChange={setAvgReadmissionCost}
+          id="mcr-revenue"
+          label="Average revenue per appointment (₹)"
+          value={avgRevenuePerAppointment}
+          min={300}
+          max={2000}
+          step={50}
+          onChange={setAvgRevenuePerAppointment}
           formatValue={(n) => formatInr(n)}
         />
       </div>
 
-      <div className="mt-6 rounded-xl border border-primary-container/25 bg-[#0A0F1E]/80 p-4">
+      <div className="mt-6 space-y-2 rounded-xl border border-primary-container/25 bg-[#0A0F1E]/80 p-4">
+        <p className="text-sm text-slate-300">
+          Missed calls per month:{" "}
+          <span className="font-semibold text-white">
+            {Math.round(metrics.missedCallsPerMonth).toLocaleString("en-IN")}
+          </span>
+        </p>
+        <p className="text-sm text-slate-300">
+          Revenue lost per month:{" "}
+          <span className="font-semibold text-white">
+            {formatInr(metrics.revenueLostPerMonth)}
+          </span>
+        </p>
         <p className="text-2xl font-bold leading-tight text-primary-container sm:text-3xl">
-          Save {formatInr(metrics.monthlySavings)}/month
+          Recover {formatInr(metrics.recoverablePerMonth)}/month with Setu
         </p>
-        <p className="mt-2 text-sm text-slate-300">
-          {formatInr(metrics.annualSavings)} estimated annual savings
-        </p>
-        <p className="mt-1 text-sm font-semibold text-amber-200/90">
+        <p className="text-sm font-semibold text-amber-200/90">
+          Setu costs {formatInr(SETU_MONTHLY_COST)}/month ·{" "}
           {metrics.roiMultiplier.toFixed(1)}x return on investment
-        </p>
-        <p className="mt-3 text-xs text-slate-500">
-          Assumes Setu reduces readmissions by{" "}
-          <span className="text-slate-400">30%</span> · Setu est.{" "}
-          {formatInr(metrics.setuAnnualCost)}/year · Net{" "}
-          {formatInr(metrics.netRoi)}/year
         </p>
       </div>
 
-      <details className="mt-4 rounded-lg border border-slate-800 bg-surface-level-2/80 px-3 py-2 text-xs text-slate-400">
-        <summary className="cursor-pointer font-medium text-slate-300">
-          Calculation breakdown
-        </summary>
-        <ul className="mt-2 space-y-1 pb-1">
-          <li>
-            Monthly readmissions: {metrics.monthlyReadmissions.toFixed(1)} (
-            {formatInr(metrics.monthlyReadmissionCost)} cost)
-          </li>
-          <li>
-            Patients saved (30%): {metrics.patientsSaved.toFixed(1)}/month
-          </li>
-          <li>Setu annual cost: {formatInr(metrics.setuAnnualCost)}</li>
-        </ul>
-      </details>
-
       <p className="mt-4 text-center text-[11px] leading-snug text-slate-500 sm:text-left">
-        Based on published NABH readmission data for Indian hospitals.
-        Illustrative model only; not a guarantee of clinical or financial
-        outcomes.
+        Illustrative model for inbound appointment capture. Assumes recovered
+        calls convert at your average appointment value; not a guarantee of
+        revenue.
       </p>
     </div>
   );
