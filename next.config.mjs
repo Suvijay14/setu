@@ -4,6 +4,10 @@ const nextConfig = {
     // Vercel Hobby builds OOM during eslint + tsc; lint locally with `npm run lint`.
     ignoreDuringBuilds: true,
   },
+  typescript: {
+    // Hobby 8GB: Next's forked tsc peaks >6GB (jspdf + app types). Run `npm run typecheck` locally/CI.
+    ignoreBuildErrors: true,
+  },
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY:
