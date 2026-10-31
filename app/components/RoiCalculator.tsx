@@ -25,6 +25,7 @@ type SliderFieldProps = {
   step: number;
   onChange: (value: number) => void;
   formatValue?: (n: number) => string;
+  warm?: boolean;
 };
 
 function SliderField({
@@ -36,11 +37,23 @@ function SliderField({
   step,
   onChange,
   formatValue = (n) => String(n),
+  warm = true,
 }: SliderFieldProps) {
+  const labelCls = warm
+    ? "text-xs font-medium text-warm-ink-muted"
+    : "text-xs font-medium text-slate-300";
+  const inputCls = warm
+    ? "w-28 rounded-lg border border-warm-border-gentle bg-white px-2 py-1 text-right text-sm text-warm-ink focus:border-warm-primary focus:outline-none focus:ring-1 focus:ring-warm-primary/30"
+    : "w-28 rounded-lg border border-slate-700 bg-surface-level-2 px-2 py-1 text-right text-sm text-white focus:border-primary-container focus:outline-none focus:ring-1 focus:ring-primary-container/40";
+  const rangeCls = warm
+    ? "h-2 w-full cursor-pointer appearance-none rounded-full bg-warm-container-high accent-warm-primary"
+    : "h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-800 accent-primary-container";
+  const hintCls = warm ? "text-[10px] text-warm-ink-muted" : "text-[10px] text-slate-500";
+
   return (
     <div>
       <div className="mb-2 flex items-end justify-between gap-2">
-        <label htmlFor={id} className="text-xs font-medium text-slate-300">
+        <label htmlFor={id} className={labelCls}>
           {label}
         </label>
         <input
@@ -55,7 +68,7 @@ function SliderField({
               onChange(clamp(parsed, min, max));
             }
           }}
-          className="w-28 rounded-lg border border-slate-700 bg-surface-level-2 px-2 py-1 text-right text-sm text-white focus:border-primary-container focus:outline-none focus:ring-1 focus:ring-primary-container/40"
+          className={inputCls}
         />
       </div>
       <input
@@ -66,9 +79,9 @@ function SliderField({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-800 accent-primary-container"
+        className={rangeCls}
       />
-      <div className="mt-1 flex justify-between text-[10px] text-slate-500">
+      <div className={`mt-1 flex justify-between ${hintCls}`}>
         <span>{formatValue(min)}</span>
         <span>{formatValue(max)}</span>
       </div>
@@ -76,7 +89,16 @@ function SliderField({
   );
 }
 
-export default function RoiCalculator() {
+type RoiCalculatorProps = {
+  variant?: "warm" | "dark";
+  className?: string;
+};
+
+export default function RoiCalculator({
+  variant = "warm",
+  className = "",
+}: RoiCalculatorProps) {
+  const warm = variant === "warm";
   const [monthlyIncomingCalls, setMonthlyIncomingCalls] = useState(150);
   const [missedCallPercent, setMissedCallPercent] = useState(30);
   const [avgRevenuePerAppointment, setAvgRevenuePerAppointment] = useState(800);
@@ -97,16 +119,38 @@ export default function RoiCalculator() {
     };
   }, [monthlyIncomingCalls, missedCallPercent, avgRevenuePerAppointment]);
 
+  const shellCls = warm
+    ? "rounded-2xl border border-warm-border-gentle bg-white p-5 shadow-warm sm:p-6"
+    : "rounded-2xl border border-slate-800 bg-surface-level-1 p-5 text-left shadow-xl sm:p-6";
+
   return (
-    <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-slate-800 bg-surface-level-1 p-5 text-left shadow-xl sm:p-6">
+    <div className={`text-left ${shellCls} ${className}`}>
       <div className="mb-5 text-center sm:text-left">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary-container">
+        <p
+          className={
+            warm
+              ? "text-xs font-semibold uppercase tracking-wider text-warm-primary"
+              : "text-xs font-semibold uppercase tracking-wider text-primary-container"
+          }
+        >
           Clinic revenue
         </p>
-        <h2 className="mt-1 text-lg font-bold text-white">
+        <h3
+          className={
+            warm
+              ? "mt-1 font-display text-xl font-semibold text-warm-ink"
+              : "mt-1 text-lg font-bold text-white"
+          }
+        >
           Missed Call Revenue Calculator
-        </h2>
-        <p className="mt-1 text-xs text-slate-400">
+        </h3>
+        <p
+          className={
+            warm
+              ? "mt-1 text-xs text-warm-ink-muted"
+              : "mt-1 text-xs text-slate-400"
+          }
+        >
           Estimate revenue lost when peak-hour calls go unanswered — and what
           inbound AI capture can recover
         </p>
@@ -121,6 +165,7 @@ export default function RoiCalculator() {
           max={500}
           step={10}
           onChange={setMonthlyIncomingCalls}
+          warm={warm}
         />
         <SliderField
           id="mcr-missed"
@@ -131,6 +176,7 @@ export default function RoiCalculator() {
           step={1}
           onChange={setMissedCallPercent}
           formatValue={(n) => `${n}%`}
+          warm={warm}
         />
         <SliderField
           id="mcr-revenue"
@@ -141,32 +187,73 @@ export default function RoiCalculator() {
           step={50}
           onChange={setAvgRevenuePerAppointment}
           formatValue={(n) => formatInr(n)}
+          warm={warm}
         />
       </div>
 
-      <div className="mt-6 space-y-2 rounded-xl border border-primary-container/25 bg-[#0A0F1E]/80 p-4">
-        <p className="text-sm text-slate-300">
+      <div
+        className={
+          warm
+            ? "mt-6 space-y-2 rounded-xl border border-warm-primary/20 bg-warm-linen p-4"
+            : "mt-6 space-y-2 rounded-xl border border-primary-container/25 bg-[#0A0F1E]/80 p-4"
+        }
+      >
+        <p
+          className={
+            warm ? "text-sm text-warm-ink-muted" : "text-sm text-slate-300"
+          }
+        >
           Missed calls per month:{" "}
-          <span className="font-semibold text-white">
+          <span
+            className={
+              warm ? "font-semibold text-warm-ink" : "font-semibold text-white"
+            }
+          >
             {Math.round(metrics.missedCallsPerMonth).toLocaleString("en-IN")}
           </span>
         </p>
-        <p className="text-sm text-slate-300">
+        <p
+          className={
+            warm ? "text-sm text-warm-ink-muted" : "text-sm text-slate-300"
+          }
+        >
           Revenue lost per month:{" "}
-          <span className="font-semibold text-white">
+          <span
+            className={
+              warm ? "font-semibold text-warm-ink" : "font-semibold text-white"
+            }
+          >
             {formatInr(metrics.revenueLostPerMonth)}
           </span>
         </p>
-        <p className="text-2xl font-bold leading-tight text-primary-container sm:text-3xl">
+        <p
+          className={
+            warm
+              ? "text-2xl font-bold leading-tight text-warm-primary sm:text-3xl"
+              : "text-2xl font-bold leading-tight text-primary-container sm:text-3xl"
+          }
+        >
           Recover {formatInr(metrics.recoverablePerMonth)}/month with Setu
         </p>
-        <p className="text-sm font-semibold text-amber-200/90">
+        <p
+          className={
+            warm
+              ? "text-sm font-semibold text-warm-secondary"
+              : "text-sm font-semibold text-amber-200/90"
+          }
+        >
           Setu costs {formatInr(SETU_MONTHLY_COST)}/month ·{" "}
           {metrics.roiMultiplier.toFixed(1)}x return on investment
         </p>
       </div>
 
-      <p className="mt-4 text-center text-[11px] leading-snug text-slate-500 sm:text-left">
+      <p
+        className={
+          warm
+            ? "mt-4 text-center text-[11px] leading-snug text-warm-ink-muted sm:text-left"
+            : "mt-4 text-center text-[11px] leading-snug text-slate-500 sm:text-left"
+        }
+      >
         Illustrative model for inbound appointment capture. Assumes recovered
         calls convert at your average appointment value; not a guarantee of
         revenue.
