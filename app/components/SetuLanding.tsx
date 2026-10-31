@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CallButton from "./CallButton";
+import OutboundDemoCallButton from "./OutboundDemoCallButton";
 import RoiCalculator from "./RoiCalculator";
 import { setSetuUserType } from "@/lib/setuSession";
 
@@ -559,7 +560,17 @@ export default function SetuLanding() {
                   patient who forgot their morning medicine
                 </span>
               </div>
-              <CallButton variant="warm" agentType="default" />
+              <div className="flex w-full max-w-lg flex-col items-stretch gap-5 sm:flex-row sm:items-center sm:justify-center">
+                <div className="flex flex-1 flex-col items-center justify-center">
+                  <CallButton variant="warm" agentType="default" />
+                </div>
+                <span className="text-center text-sm font-medium text-warm-ink-muted sm:px-1">
+                  — or —
+                </span>
+                <div className="flex flex-1 flex-col items-center justify-center">
+                  <OutboundDemoCallButton />
+                </div>
+              </div>
               <div className="flex items-center gap-1.5 h-8">
                 <span className="h-2 w-1.5 rounded-full bg-warm-primary/40" />
                 <span className="h-3 w-1.5 rounded-full bg-warm-primary/50" />
