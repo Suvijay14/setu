@@ -2,6 +2,10 @@ import type { CallLog } from "@/lib/types";
 
 export const ORG_STORAGE_KEY = "setu_org";
 
+/** Seeded in Supabase `organizations` for buildathon demos. */
+export const DEMO_ORG_ACCESS_CODE = "DEMO-2026";
+export const DEMO_ORG_NAME = "Demo Clinic";
+
 export type StoredOrg = {
   id: string;
   name: string;

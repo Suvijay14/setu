@@ -15,6 +15,8 @@ import OrgAppointmentsTab from "@/app/components/OrgAppointmentsTab";
 import OrgPatientModal from "@/app/components/OrgPatientModal";
 import { countCsvPatientDataRows } from "@/lib/csvPatients";
 import {
+  DEMO_ORG_ACCESS_CODE,
+  DEMO_ORG_NAME,
   ORG_STORAGE_KEY,
   adherenceBadgeClass,
   formatOrgBadgeLabel,
@@ -288,7 +290,7 @@ function OrgDashboardPageInner() {
     if (!response.ok || !body.org) {
       setLoginError(
         body.error === "Invalid code"
-          ? "Invalid code. Check DEMO-2026 or your clinic code in Supabase."
+          ? `Invalid code. Try demo code ${DEMO_ORG_ACCESS_CODE} or your clinic code in Supabase.`
           : (body.error ?? "Invalid code"),
       );
       return;
@@ -860,6 +862,18 @@ function OrgDashboardPageInner() {
           call activity.
         </p>
 
+        <div className="mt-6 rounded-lg border border-emerald-800/50 bg-emerald-950/40 px-4 py-3 text-left">
+          <p className="text-xs font-medium uppercase tracking-wide text-emerald-500/90">
+            Demo access code
+          </p>
+          <p className="mt-1 font-mono text-lg font-semibold tracking-wide text-emerald-300">
+            {DEMO_ORG_ACCESS_CODE}
+          </p>
+          <p className="mt-1 text-xs text-zinc-400">
+            {DEMO_ORG_NAME} · for judges and buildathon walkthroughs
+          </p>
+        </div>
+
         <form onSubmit={handleLogin} className="mt-8 space-y-4 text-left">
           <label className="block">
             <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
@@ -869,7 +883,7 @@ function OrgDashboardPageInner() {
               type="password"
               value={codeInput}
               onChange={(e) => setCodeInput(e.target.value)}
-              placeholder="Access code"
+              placeholder={DEMO_ORG_ACCESS_CODE}
               autoComplete="off"
               className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
             />

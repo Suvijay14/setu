@@ -1,33 +1,37 @@
-# Setu — Phone-First AI Caregiver for India's Elderly
+# Setu (सेतु)
+
+AI-powered Hindi voice follow-up for Indian hospitals.
 
 ## What it does
 
-One phone call. No smartphone needed. Setu calls elderly Indian parents daily, checks their medication, handles emergencies, finds nearby hospitals, and alerts family instantly via SMS.
+- **Outbound:** Calls discharged patients daily in Hindi, checks medication adherence
+- **Inbound:** AI receptionist answers clinic calls, books appointments
+- **Dashboard:** Risk stratification, escalation alerts, SMS to clinic assistant
 
-## Demo
+## Live demo
 
-Live: https://setu-beige-beta.vercel.app  
-Dashboard: https://setu-beige-beta.vercel.app/dashboard  
-Setup: https://setu-beige-beta.vercel.app/setup
+https://setu-beige-beta.vercel.app
 
-## Tech Stack
+- Family dashboard: https://setu-beige-beta.vercel.app/dashboard
+- Family setup: https://setu-beige-beta.vercel.app/setup
+- Hospital org portal: https://setu-beige-beta.vercel.app/org
 
-- Voice: Bolna AI (Hindi, inbound + outbound calls)
-- Backend: Next.js 14 on Vercel
-- Database: Supabase
-- SMS: Twilio
-- Intelligence: Groq (qwen/qwen3.8-27b) for transcript analysis
-- Location: Nominatim (OpenStreetMap)
+## Hospital login (org dashboard)
 
-## How it works
+Open the org portal and enter the organization access code:
 
-1. Family registers parent at /setup (name, medicines, timing, location)
-2. Setu calls parent daily at their set time
-3. Parent confirms medicine in Hindi
-4. If missed → SMS to family instantly
-5. If emergency → urgent SMS with concern
-6. Parent can ask about nearby hospitals/pharmacies → SMS with names + distance
+| Organization   | Access code   |
+|----------------|---------------|
+| **Demo Clinic** | **`DEMO-2026`** |
+
+Production clinics use their own code from the Supabase `organizations` table.
+
+## Try the inbound agent
+
+Call **+91-8064-262082** and speak in Hindi.
+
+## Stack
+
+Bolna Voice AI · Sarvam Bulbul v3 (TTS) · Sarvam Saaras v3 (STT) · Groq qwen/qwen3.8-27b · Next.js · Supabase · Twilio · Vercel
 
 ## Built for Bolna Buildathon 2026
-
-Solo build. 15 days.
