@@ -9,6 +9,7 @@ import { setSetuUserType } from "@/lib/setuSession";
 
 const HERO_IMG = "/images/hero-grandmother-call.jpg";
 const FAMILY_IMG = "/images/story-grandfather-chai.jpg";
+const FOUNDER_PHOTO = "/nanaji.jpg";
 const INBOUND_LINE = "+91-8064-262082";
 
 function Icon({ name, className = "" }: { name: string; className?: string }) {
@@ -202,7 +203,75 @@ export default function SetuLanding() {
         </div>
       </header>
 
-      <main className="w-full pt-16 sm:pt-20">
+      <main className="w-full">
+        {/* Founder story — first on page */}
+        <section
+          id="founder-story"
+          aria-label="Founder's story"
+          className="scroll-mt-24 border-b border-amber-950/50 bg-gradient-to-b from-[#2a1810] via-[#1a1008] to-[#140c06] pt-16 text-amber-50/95 sm:pt-20"
+        >
+          <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-12 lg:gap-16 lg:px-12 lg:py-20">
+            <div className="flex justify-center lg:col-span-5 lg:justify-end">
+              <div
+                className="relative -rotate-2 transition-transform duration-300 hover:-rotate-1"
+                style={{ transformOrigin: "center center" }}
+              >
+                <div className="rounded-sm bg-[#f4ebe3] p-3 pb-12 shadow-[0_16px_48px_rgba(0,0,0,0.55),0_2px_0_rgba(255,255,255,0.06)_inset] ring-1 ring-black/10">
+                  <div className="relative aspect-[3/4] w-[min(100%,300px)] overflow-hidden sm:w-[280px] lg:w-[320px]">
+                    <Image
+                      src={FOUNDER_PHOTO}
+                      alt="Founder holding a photograph of Nanaji with family"
+                      fill
+                      className="object-cover object-center sepia-[0.35] saturate-[0.85]"
+                      sizes="(max-width: 1024px) 85vw, 320px"
+                      priority
+                    />
+                    <div
+                      className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-900/45 via-orange-950/25 to-amber-950/50 mix-blend-multiply"
+                      aria-hidden
+                    />
+                    <div
+                      className="pointer-events-none absolute inset-0 bg-amber-600/10"
+                      aria-hidden
+                    />
+                  </div>
+                </div>
+                <div
+                  className="absolute -bottom-2 left-1/2 h-3 w-[92%] -translate-x-1/2 rounded-full bg-black/25 blur-md"
+                  aria-hidden
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-5 lg:col-span-7">
+              <div className="space-y-4 font-display text-lg leading-relaxed sm:text-xl sm:leading-relaxed">
+                <p className="text-amber-50">
+                  My Nanaji died of a heart attack.
+                </p>
+                <p className="text-amber-100/90">
+                  He had an assistant at home. The assistant called one person.
+                </p>
+                <p className="text-amber-100/90">
+                  He had five children — three daughters, two sons — all living
+                  in the same city. None of the others knew for two hours.
+                </p>
+                <p className="text-amber-100/90">
+                  If everyone had gotten that call, they might have rushed. He
+                  might have been saved.
+                </p>
+                <p className="text-amber-50">That is why I built Setu.</p>
+              </div>
+              <p className="font-sans text-sm font-medium tracking-wide text-amber-200/80">
+                — Suvijay, Founder
+              </p>
+              <p className="max-w-xl border-t border-amber-900/60 pt-5 font-sans text-sm leading-relaxed text-amber-200/50">
+                Setu means bridge. A bridge between patients and the people who
+                love them.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* Hero */}
         <section
           id="overview"
