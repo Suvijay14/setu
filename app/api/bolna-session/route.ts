@@ -14,6 +14,7 @@ export async function POST(request: Request) {
     let userData = DEFAULT_USER_DATA;
     let agentId =
       process.env.BOLNA_AGENT_ID ??
+      process.env.NEXT_PUBLIC_BOLNA_AGENT_ID ??
       process.env.NEXT_PUBLIC_BOLNA_AGENT_ID_B2C ??
       "";
 
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
       return Response.json(
         {
           error:
-            "Missing env vars: BOLNA_API_KEY or agent_id (BOLNA_AGENT_ID / NEXT_PUBLIC_BOLNA_AGENT_ID_B2C)",
+            "Missing env vars: BOLNA_API_KEY or agent_id (BOLNA_AGENT_ID / NEXT_PUBLIC_BOLNA_AGENT_ID)",
         },
         { status: 500 },
       );

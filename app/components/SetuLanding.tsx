@@ -559,7 +559,7 @@ export default function SetuLanding() {
                   patient who forgot their morning medicine
                 </span>
               </div>
-              <CallButton variant="warm" agentType="b2c" />
+              <CallButton variant="warm" agentType="default" />
               <div className="flex items-center gap-1.5 h-8">
                 <span className="h-2 w-1.5 rounded-full bg-warm-primary/40" />
                 <span className="h-3 w-1.5 rounded-full bg-warm-primary/50" />

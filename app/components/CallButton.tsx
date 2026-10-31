@@ -12,21 +12,31 @@ function mapBolnaState(state: BolnaCallState): UiState {
   return "idle";
 }
 
-export type CallButtonAgentType = "b2c" | "b2b";
+/** `default` = server picks BOLNA_AGENT_ID (original landing demo agent). */
+export type CallButtonAgentType = "default" | "b2c" | "b2b";
+
+const DEMO_USER_DATA = {
+  patient_name: "Guest",
+  medications: "BP tablet",
+  patient_phone: "demo",
+} as const;
 
 export type CallButtonProps = {
   variant?: "default" | "warm";
-  agentType: CallButtonAgentType;
+  agentType?: CallButtonAgentType;
 };
 
 export default function CallButton({
   variant = "default",
-  agentType,
+  agentType = "default",
 }: CallButtonProps) {
-  const agentId =
+  const publicAgentId =
     agentType === "b2b"
       ? process.env.NEXT_PUBLIC_BOLNA_AGENT_ID_B2B
-      : process.env.NEXT_PUBLIC_BOLNA_AGENT_ID_B2C;
+      : agentType === "b2c"
+        ? process.env.NEXT_PUBLIC_BOLNA_AGENT_ID_B2C ??
+          process.env.NEXT_PUBLIC_BOLNA_AGENT_ID
+        : undefined;
 
   const callRef = useRef<BolnaWebCall | null>(null);
   const [state, setState] = useState<UiState>("idle");
@@ -35,10 +45,21 @@ export default function CallButton({
   useEffect(() => {
     const call = new BolnaWebCall({
       getSession: async () => {
+        const user_data = {
+          ...DEMO_USER_DATA,
+          agent_type: agentType === "b2b" ? "b2b" : "b2c",
+        };
+        const payload: { agent_id?: string; user_data: typeof user_data } = {
+          user_data,
+        };
+        if (publicAgentId?.trim()) {
+          payload.agent_id = publicAgentId.trim();
+        }
+
         const response = await fetch("/api/bolna-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ agent_id: agentId }),
+          body: JSON.stringify(payload),
         });
         if (!response.ok) {
           const payload = (await response.json().catch(() => ({}))) as {
@@ -68,7 +89,7 @@ export default function CallButton({
       void call.stop();
       callRef.current = null;
     };
-  }, [agentId]);
+  }, [publicAgentId, agentType]);
 
   const startCall = useCallback(async () => {
     const call = callRef.current;
