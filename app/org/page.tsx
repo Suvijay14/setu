@@ -32,6 +32,7 @@ import {
 } from "@/lib/orgDashboardMerge";
 import { getSupabaseBrowser } from "@/lib/supabaseBrowser";
 import { latestRefillEntries, patientNameMap } from "@/lib/refills";
+import { wp } from "@/lib/warmPortalClasses";
 
 type UploadError = { row: number; reason: string };
 
@@ -393,7 +394,7 @@ function OrgDashboardPageInner() {
 
   if (view.kind === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
+      <div className="flex min-h-screen items-center justify-center bg-warm-cream text-warm-ink-muted">
         Loading…
       </div>
     );
@@ -423,7 +424,7 @@ function OrgDashboardPageInner() {
     });
 
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100">
+      <div className={wp.page}>
         {selectedPatientId ? (
           <OrgPatientModal
             orgId={org.id}
@@ -432,127 +433,108 @@ function OrgDashboardPageInner() {
             onInactive={() => void refreshDashboard(org)}
           />
         ) : null}
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className={wp.container}>
           <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                {org.type}
-              </p>
-              <h1 className="text-2xl font-semibold tracking-tight text-white">
-                {org.name}
-              </h1>
-              <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-zinc-400">
+              <p className={wp.label}>{org.type}</p>
+              <h1 className={wp.h1}>{org.name}</h1>
+              <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-warm-ink-muted">
                 <span>Organization dashboard</span>
                 {liveConnected ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-warm-secondary/40 bg-warm-clinical-bg px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warm-secondary">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-warm-secondary" />
                     Live
                   </span>
                 ) : (
-                  <span className="text-xs text-zinc-500">
+                  <span className="text-xs text-warm-ink-muted">
                     · refreshes every 30s
                   </span>
                 )}
               </p>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
-              <Link
-                href="/dashboard"
-                className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
-              >
+              <Link href="/dashboard" className={wp.btnSecondary}>
                 Family dashboard
               </Link>
-              <button
-                type="button"
-                onClick={handleBackToHome}
-                className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
-              >
+              <button type="button" onClick={handleBackToHome} className={wp.btnSecondary}>
                 Sign out / Back to Home
               </button>
             </div>
           </header>
 
           <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                Patients
-              </p>
-              <p className="mt-2 text-3xl font-semibold text-white">
+            <div className={wp.stat}>
+              <p className={wp.label}>Patients</p>
+              <p className="mt-2 font-display text-3xl font-semibold text-warm-primary">
                 {stats.totalPatients}
               </p>
             </div>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                7-day adherence
-              </p>
-              <p className="mt-2 text-3xl font-semibold text-white">
+            <div className={wp.stat}>
+              <p className={wp.label}>7-day adherence</p>
+              <p className="mt-2 font-display text-3xl font-semibold text-warm-secondary">
                 {stats.adherencePercent !== null
                   ? `${stats.adherencePercent}%`
                   : "—"}
               </p>
             </div>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                Missed / no answer
-              </p>
-              <p className="mt-2 text-3xl font-semibold text-white">
+            <div className={wp.stat}>
+              <p className={wp.label}>Missed / no answer</p>
+              <p className="mt-2 font-display text-3xl font-semibold text-warm-ink">
                 {stats.missedOrNoAnswer}
               </p>
             </div>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                Emergencies (7d)
-              </p>
-              <p className="mt-2 text-3xl font-semibold text-white">
+            <div className={wp.stat}>
+              <p className={wp.label}>Emergencies (7d)</p>
+              <p className="mt-2 font-display text-3xl font-semibold text-warm-error">
                 {stats.emergencyCount}
               </p>
             </div>
           </div>
 
-          <section className="mb-8 rounded-xl border border-amber-500/25 bg-zinc-900/60 p-5">
+          <section className="mb-8 rounded-xl border border-amber-500/25 bg-warm-linen/90 p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 className="text-sm font-semibold text-white">Refills</h2>
-                <p className="mt-1 text-2xl font-semibold text-amber-200">
+                <h2 className="text-sm font-semibold text-warm-ink">Refills</h2>
+                <p className="mt-1 font-display text-2xl font-semibold text-warm-primary">
                   {stats.refillsNeededCount} patient
                   {stats.refillsNeededCount === 1 ? "" : "s"} need refills
                 </p>
-                <p className="mt-1 text-xs text-zinc-500">Last 7 days · from voice calls</p>
+                <p className="mt-1 text-xs text-warm-ink-muted">Last 7 days · from voice calls</p>
               </div>
               <Link
                 href="/org/refills"
-                className="shrink-0 rounded-lg bg-amber-600/90 px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-amber-500"
+                className="shrink-0 rounded-xl bg-warm-saffron px-4 py-2 text-sm font-semibold text-warm-ink transition hover:brightness-105"
               >
                 View all refills →
               </Link>
             </div>
             {refillPreview.length > 0 ? (
-              <ul className="mt-4 divide-y divide-zinc-800/80 rounded-lg border border-zinc-800 bg-zinc-950/80 text-sm">
+              <ul className="mt-4 divide-y divide-warm-border-gentle/80 rounded-lg border border-warm-border-gentle bg-warm-paper text-sm">
                 {refillPreview.map((row) => (
                   <li
                     key={`${row.patient_name}-${row.needed_at}`}
                     className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5"
                   >
-                    <span className="font-medium text-zinc-200">
+                    <span className="font-medium text-warm-ink">
                       {row.patient_name}
                     </span>
-                    <span className="text-zinc-400">{row.medicine}</span>
-                    <span className="text-xs text-zinc-500">
+                    <span className="text-warm-ink-muted">{row.medicine}</span>
+                    <span className="text-xs text-warm-ink-muted">
                       {formatDashboardDateTime(row.needed_at)}
                     </span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-4 text-sm text-zinc-500">
+              <p className="mt-4 text-sm text-warm-ink-muted">
                 No refill requests detected yet.
               </p>
             )}
           </section>
 
-          <section className="mb-8 rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-            <h2 className="text-sm font-semibold text-white">Upload Patients</h2>
-            <p className="mt-1 text-xs text-zinc-400">
+          <section className="mb-8 rounded-xl border border-warm-border-gentle bg-white p-5">
+            <h2 className="text-sm font-semibold text-warm-ink">Upload Patients</h2>
+            <p className="mt-1 text-xs text-warm-ink-muted">
               Import up to 1,000 patients from CSV. They will be onboarded under{" "}
               {org.name}.
             </p>
@@ -560,14 +542,14 @@ function OrgDashboardPageInner() {
               <a
                 href="/patients_template.csv"
                 download="patients_template.csv"
-                className="text-xs text-emerald-500 underline-offset-2 hover:text-emerald-400 hover:underline"
+                className="text-xs text-warm-primary underline-offset-2 hover:text-warm-primary-container hover:underline"
               >
                 Download CSV template
               </a>
             </p>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
               <label className="block flex-1">
-                <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                <span className="text-xs font-medium uppercase tracking-wide text-warm-ink-muted">
                   CSV file
                 </span>
                 <input
@@ -581,14 +563,14 @@ function OrgDashboardPageInner() {
                     setUploadErrors([]);
                     setUploadApiError(null);
                   }}
-                  className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-800 file:px-3 file:py-2 file:text-sm file:font-medium file:text-zinc-100 hover:file:bg-zinc-700"
+                  className="mt-2 block w-full text-sm text-warm-ink-muted file:mr-3 file:rounded-lg file:border-0 file:bg-warm-linen file:px-3 file:py-2 file:text-sm file:font-medium file:text-warm-ink hover:file:bg-warm-container-high"
                 />
               </label>
               <button
                 type="button"
                 disabled={!csvFile || uploading}
                 onClick={() => void handleCsvUpload()}
-                className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                className={`${wp.btnPrimary} disabled:cursor-not-allowed disabled:opacity-60`}
               >
                 Upload and Onboard
               </button>
@@ -597,24 +579,24 @@ function OrgDashboardPageInner() {
               <p className="mt-3 text-sm text-amber-300">{uploadProgressLabel}</p>
             ) : null}
             {uploadSuccessMessage ? (
-              <p className="mt-3 text-sm text-emerald-400">{uploadSuccessMessage}</p>
+              <p className="mt-3 text-sm text-warm-secondary">{uploadSuccessMessage}</p>
             ) : null}
             {uploadApiError ? (
-              <p className="mt-3 text-sm text-red-400" role="alert">
+              <p className="mt-3 text-sm text-warm-error" role="alert">
                 {uploadApiError}
               </p>
             ) : null}
             {uploadErrors.length > 0 ? (
-              <details className="mt-4 rounded-lg border border-zinc-800 bg-zinc-950/80 p-3">
-                <summary className="cursor-pointer text-xs font-medium text-zinc-300">
+              <details className="mt-4 rounded-lg border border-warm-border-gentle bg-warm-paper p-3">
+                <summary className="cursor-pointer text-xs font-medium text-warm-ink-muted">
                   {uploadErrors.length} import error
                   {uploadErrors.length === 1 ? "" : "s"} (click to expand)
                 </summary>
-                <ul className="mt-3 max-h-48 space-y-2 overflow-y-auto text-xs text-zinc-400">
+                <ul className="mt-3 max-h-48 space-y-2 overflow-y-auto text-xs text-warm-ink-muted">
                   {uploadErrors.map((err, index) => (
                     <li key={`${err.row}-${index}`}>
                       {err.row > 0 ? (
-                        <span className="text-zinc-500">Row {err.row}: </span>
+                        <span className="text-warm-ink-muted">Row {err.row}: </span>
                       ) : null}
                       {err.reason}
                     </li>
@@ -624,14 +606,14 @@ function OrgDashboardPageInner() {
             ) : null}
           </section>
 
-          <div className="mb-4 flex flex-wrap gap-2 border-b border-zinc-800 pb-3">
+          <div className="mb-4 flex flex-wrap gap-2 border-b border-warm-border-gentle pb-3">
             <button
               type="button"
               onClick={() => setOrgTab("patients")}
               className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
                 orgTab === "patients"
-                  ? "bg-zinc-100 text-zinc-950"
-                  : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                  ? "bg-warm-primary text-white"
+                  : "bg-warm-linen text-warm-ink-muted hover:bg-warm-container-high hover:text-warm-ink"
               }`}
             >
               Patients
@@ -641,8 +623,8 @@ function OrgDashboardPageInner() {
               onClick={() => setOrgTab("appointments")}
               className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
                 orgTab === "appointments"
-                  ? "bg-zinc-100 text-zinc-950"
-                  : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                  ? "bg-warm-primary text-white"
+                  : "bg-warm-linen text-warm-ink-muted hover:bg-warm-container-high hover:text-warm-ink"
               }`}
             >
               Appointments ({appointmentCount})
@@ -650,12 +632,12 @@ function OrgDashboardPageInner() {
           </div>
 
           {orgTab === "appointments" ? (
-            <div className="mb-8 overflow-hidden rounded-xl border border-zinc-800">
-              <div className="border-b border-zinc-800 bg-zinc-900/90 px-4 py-3">
-                <h2 className="text-sm font-semibold text-white">
+            <div className="mb-8 overflow-hidden rounded-xl border border-warm-border-gentle">
+              <div className="border-b border-warm-border-gentle bg-warm-linen px-4 py-3">
+                <h2 className="text-sm font-semibold text-warm-ink">
                   Appointment requests
                 </h2>
-                <p className="mt-0.5 text-xs text-zinc-500">
+                <p className="mt-0.5 text-xs text-warm-ink-muted">
                   Inbound line + escalation follow-ups
                 </p>
               </div>
@@ -665,16 +647,16 @@ function OrgDashboardPageInner() {
 
           {orgTab === "patients" ? (
           <>
-          <div className="mb-8 overflow-hidden rounded-xl border border-zinc-800">
-            <div className="border-b border-zinc-800 bg-zinc-900/90 px-4 py-3">
+          <div className="mb-8 overflow-hidden rounded-xl border border-warm-border-gentle">
+            <div className="border-b border-warm-border-gentle bg-warm-linen px-4 py-3">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <h2 className="text-sm font-semibold text-white">Patients</h2>
-                  <p className="mt-0.5 text-xs text-zinc-500">
+                  <h2 className="text-sm font-semibold text-warm-ink">Patients</h2>
+                  <p className="mt-0.5 text-xs text-warm-ink-muted">
                     Click a row for full history, adherence, and medications
                   </p>
                 </div>
-                <label className="flex items-center gap-2 text-xs text-zinc-400">
+                <label className="flex items-center gap-2 text-xs text-warm-ink-muted">
                   <span className="shrink-0 font-medium uppercase tracking-wide">
                     Show
                   </span>
@@ -685,7 +667,7 @@ function OrgDashboardPageInner() {
                         e.target.value as "all" | "high" | "attention",
                       )
                     }
-                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-200 focus:border-primary-container focus:outline-none"
+                    className="rounded-lg border border-warm-border-gentle bg-warm-paper px-2.5 py-1.5 text-sm text-warm-ink focus:border-primary-container focus:outline-none"
                   >
                     <option value="all">All</option>
                     <option value="high">High Risk Only</option>
@@ -695,8 +677,8 @@ function OrgDashboardPageInner() {
               </div>
             </div>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-zinc-800 text-left text-sm">
-                <thead className="bg-zinc-900/60 text-xs uppercase tracking-wide text-zinc-400">
+              <table className="min-w-full divide-y divide-warm-border-gentle text-left text-sm">
+                <thead className="bg-warm-linen/90 text-xs uppercase tracking-wide text-warm-ink-muted">
                   <tr>
                     <th className="px-4 py-3 font-medium">Name</th>
                     <th className="px-4 py-3 font-medium">Phone</th>
@@ -705,12 +687,12 @@ function OrgDashboardPageInner() {
                     <th className="px-4 py-3 font-medium">Risk</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-800/80 bg-zinc-950">
+                <tbody className="divide-y divide-warm-border-gentle/80 bg-warm-paper">
                   {patients.length === 0 ? (
                     <tr>
                       <td
                         colSpan={5}
-                        className="px-4 py-10 text-center text-zinc-500"
+                        className="px-4 py-10 text-center text-warm-ink-muted"
                       >
                         No patients linked to this organization yet.
                       </td>
@@ -719,7 +701,7 @@ function OrgDashboardPageInner() {
                     <tr>
                       <td
                         colSpan={5}
-                        className="px-4 py-10 text-center text-zinc-500"
+                        className="px-4 py-10 text-center text-warm-ink-muted"
                       >
                         No patients match this risk filter.
                       </td>
@@ -730,7 +712,7 @@ function OrgDashboardPageInner() {
                         key={row.id}
                         role="button"
                         tabIndex={0}
-                        className="cursor-pointer transition hover:bg-zinc-900/60 focus:bg-zinc-900/60 focus:outline-none focus:ring-1 focus:ring-primary-container/50"
+                        className="cursor-pointer transition hover:bg-warm-linen/90 focus:bg-warm-linen/90 focus:outline-none focus:ring-1 focus:ring-primary-container/50"
                         onClick={() => setSelectedPatientId(row.id)}
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") {
@@ -740,19 +722,19 @@ function OrgDashboardPageInner() {
                         }}
                       >
                         <td className="px-4 py-3">
-                          <div className="font-medium text-zinc-100">
+                          <div className="font-medium text-warm-ink">
                             {row.name ?? "—"}
                           </div>
                           {row.location ? (
-                            <div className="text-xs text-zinc-500">
+                            <div className="text-xs text-warm-ink-muted">
                               {row.location}
                             </div>
                           ) : null}
                         </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-zinc-300">
+                        <td className="whitespace-nowrap px-4 py-3 text-warm-ink-muted">
                           {row.phone}
                         </td>
-                        <td className="px-4 py-3 capitalize text-zinc-300">
+                        <td className="px-4 py-3 capitalize text-warm-ink-muted">
                           {row.last_call_status ?? "—"}
                         </td>
                         <td className="px-4 py-3">
@@ -778,15 +760,15 @@ function OrgDashboardPageInner() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-zinc-800">
-            <div className="border-b border-zinc-800 bg-zinc-900/90 px-4 py-3">
-              <h2 className="text-sm font-semibold text-white">
+          <div className="overflow-hidden rounded-xl border border-warm-border-gentle">
+            <div className="border-b border-warm-border-gentle bg-warm-linen px-4 py-3">
+              <h2 className="text-sm font-semibold text-warm-ink">
                 Recent calls ({stats.callsLast7Days} in last 7 days)
               </h2>
             </div>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-zinc-800 text-left text-sm">
-                <thead className="bg-zinc-900/90 text-xs uppercase tracking-wide text-zinc-400">
+              <table className="min-w-full divide-y divide-warm-border-gentle text-left text-sm">
+                <thead className="bg-warm-linen text-xs uppercase tracking-wide text-warm-ink-muted">
                   <tr>
                     <th className="px-4 py-3 font-medium">Date / Time</th>
                     <th className="px-4 py-3 font-medium">Patient</th>
@@ -796,12 +778,12 @@ function OrgDashboardPageInner() {
                     <th className="px-4 py-3 font-medium">Escalation</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-800/80 bg-zinc-950">
+                <tbody className="divide-y divide-warm-border-gentle/80 bg-warm-paper">
                   {sortedCalls.length === 0 ? (
                     <tr>
                       <td
                         colSpan={6}
-                        className="px-4 py-12 text-center text-zinc-500"
+                        className="px-4 py-12 text-center text-warm-ink-muted"
                       >
                         No call logs for this organization yet.
                       </td>
@@ -812,19 +794,19 @@ function OrgDashboardPageInner() {
                         key={row.id}
                         className={`transition-colors ${rowHighlightClass(row)}`}
                       >
-                        <td className="whitespace-nowrap px-4 py-3 text-zinc-300">
+                        <td className="whitespace-nowrap px-4 py-3 text-warm-ink-muted">
                           {formatDashboardDateTime(row.created_at)}
                         </td>
-                        <td className="px-4 py-3 text-zinc-100">
+                        <td className="px-4 py-3 text-warm-ink">
                           {row.patient_name ?? "—"}
                         </td>
-                        <td className="px-4 py-3 capitalize text-zinc-300">
+                        <td className="px-4 py-3 capitalize text-warm-ink-muted">
                           {row.status ?? "—"}
                         </td>
-                        <td className="px-4 py-3 capitalize text-zinc-300">
+                        <td className="px-4 py-3 capitalize text-warm-ink-muted">
                           {row.medication_taken ?? "—"}
                         </td>
-                        <td className="max-w-xs px-4 py-3 text-zinc-400">
+                        <td className="max-w-xs px-4 py-3 text-warm-ink-muted">
                           {row.summary ?? "—"}
                         </td>
                         <td className="px-4 py-3">
@@ -833,7 +815,7 @@ function OrgDashboardPageInner() {
                               Escalation
                             </span>
                           ) : (
-                            <span className="text-zinc-500">—</span>
+                            <span className="text-warm-ink-muted">—</span>
                           )}
                         </td>
                       </tr>
@@ -851,64 +833,53 @@ function OrgDashboardPageInner() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-4 text-zinc-100">
+    <div className={wp.pageCenter}>
       <div className="w-full max-w-md text-center">
-        <p className="text-3xl font-semibold tracking-tight text-white">
-          Setu
+        <p className={wp.brand}>Setu | सेतु</p>
+        <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-warm-primary">
+          Organization portal
         </p>
-        <p className="mt-2 text-sm text-zinc-400">Organization portal</p>
-        <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+        <p className={`mt-4 ${wp.subtitle}`}>
           Enter your clinic or partner access code to view enrolled patients and
           call activity.
         </p>
 
-        <div className="mt-6 rounded-lg border border-emerald-800/50 bg-emerald-950/40 px-4 py-3 text-left">
-          <p className="text-xs font-medium uppercase tracking-wide text-emerald-500/90">
-            Demo access code
-          </p>
-          <p className="mt-1 font-mono text-lg font-semibold tracking-wide text-emerald-300">
+        <div className={`mt-6 ${wp.demoBox}`}>
+          <p className={wp.label}>Demo access code</p>
+          <p className="mt-1 font-mono text-lg font-semibold tracking-wide text-warm-primary">
             {DEMO_ORG_ACCESS_CODE}
           </p>
-          <p className="mt-1 text-xs text-zinc-400">
+          <p className="mt-1 text-xs text-warm-ink-muted">
             {DEMO_ORG_NAME} · for judges and buildathon walkthroughs
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className="mt-8 space-y-4 text-left">
+        <form onSubmit={handleLogin} className={`mt-8 space-y-4 p-6 text-left ${wp.card}`}>
           <label className="block">
-            <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-              Organization access code
-            </span>
+            <span className={wp.label}>Organization access code</span>
             <input
               type="password"
               value={codeInput}
               onChange={(e) => setCodeInput(e.target.value)}
               placeholder={DEMO_ORG_ACCESS_CODE}
               autoComplete="off"
-              className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+              className={wp.input}
             />
           </label>
 
           {loginError ? (
-            <p className="text-sm text-red-400" role="alert">
+            <p className={wp.error} role="alert">
               {loginError}
             </p>
           ) : null}
 
-          <button
-            type="submit"
-            className="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500"
-          >
+          <button type="submit" className={`w-full ${wp.btnPrimary}`}>
             Enter dashboard
           </button>
         </form>
 
         <p className="mt-6 text-sm">
-          <button
-            type="button"
-            onClick={handleBackToHome}
-            className="text-emerald-500 underline-offset-2 hover:text-emerald-400 hover:underline"
-          >
+          <button type="button" onClick={handleBackToHome} className={wp.link}>
             ← Sign out / Back to Home
           </button>
         </p>
@@ -921,7 +892,7 @@ export default function OrgDashboardPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
+        <div className="flex min-h-screen items-center justify-center bg-warm-cream text-warm-ink-muted">
           Loading…
         </div>
       }

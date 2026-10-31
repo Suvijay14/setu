@@ -3,27 +3,28 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Appointment } from "@/lib/appointments";
 import { formatDashboardDateTime } from "@/lib/dashboardClient";
+import { wp } from "@/lib/warmPortalClasses";
 
 function statusPillClass(status: string | null): string {
   if (status === "confirmed") {
-    return "border-emerald-500/40 bg-emerald-500/15 text-emerald-300";
+    return "border-warm-secondary/40 bg-warm-clinical-bg text-warm-secondary";
   }
   if (status === "cancelled") {
-    return "border-red-500/40 bg-red-500/15 text-red-300";
+    return "border-warm-error/40 bg-warm-error-container/50 text-warm-error";
   }
-  return "border-amber-500/40 bg-amber-500/15 text-amber-200";
+  return "border-warm-saffron/40 bg-amber-50 text-amber-900";
 }
 
 function sourceBadge(source: string | null) {
   if (source === "escalation") {
     return (
-      <span className="inline-flex rounded-full border border-red-500/40 bg-red-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-300">
+      <span className="inline-flex rounded-full border border-warm-error/40 bg-warm-error-container/40 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warm-error">
         ⚠️ Escalation
       </span>
     );
   }
   return (
-    <span className="inline-flex rounded-full border border-sky-500/40 bg-sky-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-300">
+    <span className="inline-flex rounded-full border border-warm-primary/30 bg-warm-linen px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warm-primary">
       📞 Inbound Call
     </span>
   );
@@ -86,12 +87,16 @@ export default function OrgAppointmentsTab({
   };
 
   if (loading) {
-    return <p className="px-4 py-10 text-center text-sm text-zinc-500">Loading appointments…</p>;
+    return (
+      <p className="px-4 py-10 text-center text-sm text-warm-ink-muted">
+        Loading appointments…
+      </p>
+    );
   }
 
   if (error) {
     return (
-      <p className="px-4 py-10 text-center text-sm text-red-400" role="alert">
+      <p className={`px-4 py-10 text-center ${wp.error}`} role="alert">
         {error}
       </p>
     );
@@ -99,7 +104,7 @@ export default function OrgAppointmentsTab({
 
   if (appointments.length === 0) {
     return (
-      <p className="px-4 py-10 text-center text-sm text-zinc-500">
+      <p className="px-4 py-10 text-center text-sm text-warm-ink-muted">
         No appointment requests yet. Inbound calls from +918064262082 will appear
         here.
       </p>
@@ -107,13 +112,13 @@ export default function OrgAppointmentsTab({
   }
 
   return (
-    <ul className="divide-y divide-zinc-800/80 bg-zinc-950">
+    <ul className="divide-y divide-warm-border-gentle bg-white">
       {appointments.map((row) => (
         <li key={row.id} className="px-4 py-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0 flex-1 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-base font-semibold text-zinc-100">
+                <p className="text-base font-semibold text-warm-ink">
                   {row.patient_name}
                 </p>
                 {sourceBadge(row.source)}
@@ -123,27 +128,27 @@ export default function OrgAppointmentsTab({
                   {row.status ?? "pending"}
                 </span>
               </div>
-              <p className="text-sm text-zinc-300">
+              <p className="text-sm text-warm-ink">
                 <a
                   href={`tel:${row.phone.replace(/\s/g, "")}`}
-                  className="font-medium text-emerald-400 underline-offset-2 hover:underline"
+                  className="font-medium text-warm-primary underline-offset-2 hover:underline"
                 >
                   {row.phone}
                 </a>
                 {row.doctor ? (
-                  <span className="text-zinc-500"> · {row.doctor}</span>
+                  <span className="text-warm-ink-muted"> · {row.doctor}</span>
                 ) : null}
               </p>
               {row.symptoms ? (
-                <p className="text-sm italic text-zinc-500">{row.symptoms}</p>
+                <p className="text-sm italic text-warm-ink-muted">{row.symptoms}</p>
               ) : null}
               <div className="flex flex-wrap items-center gap-2">
                 {row.preferred_time ? (
-                  <span className="inline-flex rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-200">
+                  <span className="inline-flex rounded-full border border-warm-saffron/40 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-900">
                     {row.preferred_time}
                   </span>
                 ) : null}
-                <span className="text-xs text-zinc-600">
+                <span className="text-xs text-warm-ink-muted">
                   {formatDashboardDateTime(row.created_at)}
                 </span>
               </div>
@@ -154,7 +159,7 @@ export default function OrgAppointmentsTab({
                   type="button"
                   disabled={updatingId === row.id}
                   onClick={() => void patchStatus(row.id, "confirmed")}
-                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
+                  className={`${wp.btnPrimary} px-3 py-1.5 text-xs disabled:opacity-50`}
                 >
                   Confirm
                 </button>
@@ -162,7 +167,7 @@ export default function OrgAppointmentsTab({
                   type="button"
                   disabled={updatingId === row.id}
                   onClick={() => void patchStatus(row.id, "cancelled")}
-                  className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-800 disabled:opacity-50"
+                  className={`${wp.btnSecondary} px-3 py-1.5 text-xs disabled:opacity-50`}
                 >
                   Cancel
                 </button>

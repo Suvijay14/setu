@@ -27,12 +27,12 @@ export type OrgPatientDetail = {
 
 function medicationBadgeClass(taken: string | null | undefined): string {
   if (taken === "yes") {
-    return "border-emerald-500/40 bg-emerald-500/15 text-emerald-300";
+    return "border-emerald-500/40 bg-warm-secondary/15 text-warm-secondary";
   }
   if (taken === "no") {
     return "border-red-500/40 bg-red-500/15 text-red-300";
   }
-  return "border-zinc-600 bg-zinc-800 text-zinc-400";
+  return "border-warm-border-gentle bg-warm-linen text-warm-ink-muted";
 }
 
 function medicationLabel(taken: string | null | undefined): string {
@@ -44,11 +44,11 @@ function medicationLabel(taken: string | null | undefined): string {
 
 function statusBadgeClass(status: string | null | undefined): string {
   if (!status) {
-    return "border-zinc-700 bg-zinc-800 text-zinc-400";
+    return "border-warm-border-gentle bg-warm-linen text-warm-ink-muted";
   }
   const s = status.toLowerCase();
   if (s === "completed") {
-    return "border-primary-container/50 bg-primary-container/15 text-primary-container";
+    return "border-warm-primary/40 bg-warm-linen text-warm-primary";
   }
   if (
     s === "no-answer" ||
@@ -59,14 +59,14 @@ function statusBadgeClass(status: string | null | undefined): string {
   ) {
     return "border-amber-700/40 bg-amber-950/40 text-amber-200";
   }
-  return "border-primary-container/30 bg-primary-container/10 text-amber-200";
+  return "border-warm-saffron/40 bg-amber-50 text-amber-900";
 }
 
 function dayBarClass(taken: DayAdherence["taken"]): string {
-  if (taken === "yes") return "bg-emerald-500";
+  if (taken === "yes") return "bg-warm-secondary";
   if (taken === "no") return "bg-red-500";
   if (taken === "unclear") return "bg-zinc-500";
-  return "bg-zinc-800";
+  return "bg-warm-linen";
 }
 
 function escalationText(call: CallLog): string | null {
@@ -216,20 +216,20 @@ export default function OrgPatientModal({
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-800 bg-surface-base shadow-2xl"
+        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-warm-border-gentle bg-warm-cream shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 flex items-center justify-between border-b border-slate-800 bg-surface-base/95 px-5 py-4 backdrop-blur-md">
+        <div className="sticky top-0 flex items-center justify-between border-b border-warm-border-gentle bg-warm-cream/95 px-5 py-4 backdrop-blur-md">
           <h2
             id="org-patient-modal-title"
-            className="text-lg font-semibold text-white"
+            className="text-lg font-semibold text-warm-ink"
           >
             Patient details
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 transition hover:bg-zinc-800"
+            className="rounded-lg border border-warm-border-gentle px-3 py-1.5 text-sm text-warm-ink-muted transition hover:bg-warm-linen"
           >
             Close
           </button>
@@ -237,43 +237,43 @@ export default function OrgPatientModal({
 
         <div className="space-y-6 p-5">
           {loading ? (
-            <p className="text-sm text-zinc-400">Loading…</p>
+            <p className="text-sm text-warm-ink-muted">Loading…</p>
           ) : error ? (
-            <p className="text-sm text-red-400">{error}</p>
+            <p className="text-sm text-warm-error">{error}</p>
           ) : detail ? (
             <>
-              <div className="rounded-xl border border-slate-800 bg-surface-level-1 p-4">
-                <p className="text-xl font-semibold text-white">
+              <div className="rounded-xl border border-warm-border-gentle bg-warm-linen p-4">
+                <p className="text-xl font-semibold text-warm-ink">
                   {detail.patient.name ?? "Unnamed patient"}
                 </p>
                 <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
                   <div>
-                    <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                    <dt className="text-xs uppercase tracking-wide text-warm-ink-muted">
                       Phone
                     </dt>
-                    <dd className="text-zinc-200">{detail.patient.phone}</dd>
+                    <dd className="text-warm-ink">{detail.patient.phone}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                    <dt className="text-xs uppercase tracking-wide text-warm-ink-muted">
                       Location
                     </dt>
-                    <dd className="text-zinc-200">
+                    <dd className="text-warm-ink">
                       {detail.patient.location ?? "—"}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                    <dt className="text-xs uppercase tracking-wide text-warm-ink-muted">
                       Protocol
                     </dt>
-                    <dd className="capitalize text-zinc-200">
+                    <dd className="capitalize text-warm-ink">
                       {detail.patient.protocol ?? "—"}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                    <dt className="text-xs uppercase tracking-wide text-warm-ink-muted">
                       Reminder time
                     </dt>
-                    <dd className="text-zinc-200">
+                    <dd className="text-warm-ink">
                       {detail.patient.reminder_time
                         ? `${detail.patient.reminder_time} IST daily`
                         : "—"}
@@ -282,12 +282,12 @@ export default function OrgPatientModal({
                 </dl>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {detail.patient.protocol ? (
-                    <span className="rounded-full border border-primary-container/40 bg-primary-container/10 px-2.5 py-0.5 text-xs capitalize text-primary-container">
+                    <span className="rounded-full border border-warm-primary/30 bg-warm-linen px-2.5 py-0.5 text-xs capitalize text-warm-primary">
                       {detail.patient.protocol}
                     </span>
                   ) : null}
                   {detail.patient.reminder_time ? (
-                    <span className="rounded-full border border-slate-700 bg-surface-level-2 px-2.5 py-0.5 text-xs text-zinc-300">
+                    <span className="rounded-full border border-warm-border-gentle bg-warm-linen px-2.5 py-0.5 text-xs text-warm-ink-muted">
                       Calls at {detail.patient.reminder_time} IST
                     </span>
                   ) : null}
@@ -295,7 +295,7 @@ export default function OrgPatientModal({
               </div>
 
               <div>
-                <h3 className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                <h3 className="text-xs font-medium uppercase tracking-wide text-warm-ink-muted">
                   Medications
                 </h3>
                 {meds.length > 0 ? (
@@ -303,23 +303,23 @@ export default function OrgPatientModal({
                     {meds.map((med) => (
                       <li
                         key={med}
-                        className="rounded-lg border border-slate-700 bg-surface-level-1 px-3 py-1.5 text-sm text-zinc-200"
+                        className="rounded-lg border border-warm-border-gentle bg-warm-linen px-3 py-1.5 text-sm text-warm-ink"
                       >
                         {med}
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="mt-2 text-sm text-zinc-500">—</p>
+                  <p className="mt-2 text-sm text-warm-ink-muted">—</p>
                 )}
               </div>
 
-              <div className="rounded-xl border border-slate-800 bg-surface-level-1 p-4">
-                <h3 className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <div className="rounded-xl border border-warm-border-gentle bg-warm-linen p-4">
+                <h3 className="text-xs font-medium uppercase tracking-wide text-warm-ink-muted">
                   7-day adherence
                 </h3>
                 <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-                  <p className="text-4xl font-semibold tabular-nums text-white">
+                  <p className="text-4xl font-semibold tabular-nums text-warm-ink">
                     {detail.adherencePercent7d !== null
                       ? `${detail.adherencePercent7d}%`
                       : "—"}
@@ -344,33 +344,33 @@ export default function OrgPatientModal({
                                     : "14px",
                           }}
                         />
-                        <span className="text-[9px] text-zinc-500">
+                        <span className="text-[9px] text-warm-ink-muted">
                           {day.date.slice(8)}
                         </span>
                       </div>
                     ))}
                   </div>
                 </div>
-                <p className="mt-2 text-xs text-zinc-500">
+                <p className="mt-2 text-xs text-warm-ink-muted">
                   Yes responses ÷ calls in the last 7 days
                 </p>
               </div>
 
               {detail.nextScheduledCall ? (
-                <div className="rounded-lg border border-primary-container/25 bg-primary-container/5 px-4 py-3 text-sm">
-                  <span className="text-zinc-400">Next scheduled call: </span>
-                  <strong className="font-medium text-primary-container">
+                <div className="rounded-lg border border-warm-primary/20 bg-warm-linen/80 px-4 py-3 text-sm">
+                  <span className="text-warm-ink-muted">Next scheduled call: </span>
+                  <strong className="font-medium text-warm-primary">
                     {detail.nextScheduledCall.label}
                   </strong>
                 </div>
               ) : null}
 
               <div>
-                <h3 className="mb-3 text-xs font-medium uppercase tracking-wide text-zinc-500">
+                <h3 className="mb-3 text-xs font-medium uppercase tracking-wide text-warm-ink-muted">
                   Call history (last 5)
                 </h3>
                 {recentCalls.length === 0 ? (
-                  <p className="text-sm text-zinc-500">No calls yet.</p>
+                  <p className="text-sm text-warm-ink-muted">No calls yet.</p>
                 ) : (
                   <ul className="space-y-3">
                     {recentCalls.map((call) => {
@@ -378,10 +378,10 @@ export default function OrgPatientModal({
                       return (
                         <li
                           key={call.id}
-                          className="rounded-xl border border-slate-800 bg-zinc-950/80 p-3 text-sm"
+                          className="rounded-xl border border-warm-border-gentle bg-warm-paper/80 p-3 text-sm"
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="text-zinc-300">
+                            <span className="text-warm-ink-muted">
                               {formatDashboardDateTime(call.created_at)}
                               {call.duration != null
                                 ? ` · ${call.duration}s`
@@ -394,7 +394,7 @@ export default function OrgPatientModal({
                             </span>
                           </div>
                           <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <span className="text-xs text-zinc-500">
+                            <span className="text-xs text-warm-ink-muted">
                               Medication:
                             </span>
                             <span
@@ -404,9 +404,9 @@ export default function OrgPatientModal({
                             </span>
                           </div>
                           {call.mood ? (
-                            <p className="mt-2 capitalize text-zinc-400">
+                            <p className="mt-2 capitalize text-warm-ink-muted">
                               Mood:{" "}
-                              <span className="text-zinc-300">{call.mood}</span>
+                              <span className="text-warm-ink-muted">{call.mood}</span>
                             </p>
                           ) : null}
                           {escalation ? (
@@ -426,7 +426,7 @@ export default function OrgPatientModal({
                   type="button"
                   disabled={downloadingPdf}
                   onClick={() => void handleDownloadReport()}
-                  className="flex-1 rounded-lg border border-white/80 bg-transparent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex-1 rounded-lg border border-white/80 bg-transparent px-4 py-2.5 text-sm font-medium text-warm-ink transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {downloadingPdf
                     ? "Generating PDF…"
@@ -436,7 +436,7 @@ export default function OrgPatientModal({
                   type="button"
                   disabled={markingInactive || !detail.patient.is_active}
                   onClick={() => void handleMarkInactive()}
-                  className="flex-1 rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex-1 rounded-lg border border-warm-border-gentle bg-warm-linen px-4 py-2.5 text-sm font-medium text-warm-ink-muted transition hover:bg-warm-linen disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {markingInactive
                     ? "Updating…"

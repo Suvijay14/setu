@@ -14,6 +14,7 @@ import {
   type DashboardApiSuccess,
   type DashboardPatient,
 } from "@/lib/dashboardClient";
+import { wp } from "@/lib/warmPortalClasses";
 
 const SUMMARY_TIME_OPTIONS = [
   "18:00",
@@ -264,9 +265,7 @@ export default function DashboardPage() {
 
   if (view.kind === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
-        Loading…
-      </div>
+      <div className={wp.loading}>Loading…</div>
     );
   }
 
@@ -277,28 +276,24 @@ export default function DashboardPage() {
     const patientName = view.patient.name ?? "Your family";
 
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100">
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className={wp.page}>
+        <div className={wp.container}>
           <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-white">
-                Setu Family Dashboard
-              </h1>
-              <p className="mt-1 text-sm text-zinc-400">
+              <p className={wp.label}>Family care ledger</p>
+              <h1 className={wp.h1}>Setu Family Dashboard</h1>
+              <p className={`mt-1 ${wp.subtitle}`}>
                 {patientName} · {view.familyPhone} · refreshes every 30s
               </p>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
-              <Link
-                href="/org"
-                className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
-              >
+              <Link href="/org" className={wp.btnSecondary}>
                 Clinic portal
               </Link>
               <button
                 type="button"
                 onClick={handleBackToHome}
-                className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+                className={wp.btnSecondary}
               >
                 Sign out / Back to Home
               </button>
@@ -306,36 +301,30 @@ export default function DashboardPage() {
           </header>
 
           <div className="mb-8 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                Calls today
-              </p>
-              <p className="mt-2 text-3xl font-semibold text-white">
+            <div className={wp.stat}>
+              <p className={wp.label}>Calls today</p>
+              <p className="mt-2 font-display text-3xl font-semibold text-warm-primary">
                 {callsToday}
               </p>
             </div>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                Medicine compliance
-              </p>
-              <p className="mt-2 text-3xl font-semibold text-white">
+            <div className={wp.stat}>
+              <p className={wp.label}>Medicine compliance</p>
+              <p className="mt-2 font-display text-3xl font-semibold text-warm-secondary">
                 {compliancePercent !== null ? `${compliancePercent}%` : "—"}
               </p>
             </div>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                Active patients
-              </p>
-              <p className="mt-2 text-3xl font-semibold text-white">
+            <div className={wp.stat}>
+              <p className={wp.label}>Active patients</p>
+              <p className="mt-2 font-display text-3xl font-semibold text-warm-ink">
                 {view.patient.onboarded ? 1 : 0}
               </p>
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-zinc-800">
+          <div className={wp.tableWrap}>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-zinc-800 text-left text-sm">
-                <thead className="bg-zinc-900/90 text-xs uppercase tracking-wide text-zinc-400">
+              <table className="min-w-full text-left text-sm">
+                <thead className={wp.thead}>
                   <tr>
                     <th className="px-4 py-3 font-medium">Date / Time</th>
                     <th className="px-4 py-3 font-medium">Patient</th>
@@ -347,12 +336,12 @@ export default function DashboardPage() {
                     <th className="px-4 py-3 font-medium">SMS</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-800/80 bg-zinc-950">
+                <tbody className={wp.tbody}>
                   {view.calls.length === 0 ? (
                     <tr>
                       <td
                         colSpan={8}
-                        className="px-4 py-12 text-center text-zinc-500"
+                        className="px-4 py-12 text-center text-warm-ink-muted"
                       >
                         No call logs yet for this patient.
                       </td>
@@ -363,45 +352,45 @@ export default function DashboardPage() {
                         key={row.id}
                         className={`transition-colors ${rowHighlightClass(row)}`}
                       >
-                        <td className="whitespace-nowrap px-4 py-3 text-zinc-300">
+                        <td className="whitespace-nowrap px-4 py-3 text-warm-ink-muted">
                           {formatDashboardDateTime(row.created_at)}
                         </td>
                         <td className="px-4 py-3">
-                          <div className="font-medium text-zinc-100">
+                          <div className="font-medium text-warm-ink">
                             {row.patient_name ?? patientName}
                           </div>
                           {view.patient.location ? (
-                            <div className="text-xs text-zinc-500">
+                            <div className="text-xs text-warm-ink-muted">
                               {view.patient.location}
                             </div>
                           ) : null}
                         </td>
-                        <td className="px-4 py-3 text-zinc-300">
+                        <td className="px-4 py-3 text-warm-ink">
                           {row.status ?? "—"}
                         </td>
-                        <td className="px-4 py-3 capitalize text-zinc-300">
+                        <td className="px-4 py-3 capitalize text-warm-ink">
                           {row.medication_taken ?? "—"}
                         </td>
-                        <td className="px-4 py-3 capitalize text-zinc-300">
+                        <td className="px-4 py-3 capitalize text-warm-ink">
                           {row.mood ?? "—"}
                         </td>
-                        <td className="max-w-xs px-4 py-3 text-zinc-400">
+                        <td className="max-w-xs px-4 py-3 text-warm-ink-muted">
                           {row.summary ?? "—"}
                         </td>
                         <td className="px-4 py-3">
                           {row.emergency ? (
-                            <span className="font-medium text-red-400">
+                            <span className="font-medium text-warm-error">
                               Yes
                             </span>
                           ) : (
-                            <span className="text-zinc-500">No</span>
+                            <span className="text-warm-ink-muted">No</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
                           {row.sms_sent ? (
-                            <span className="text-emerald-400">Sent</span>
+                            <span className="text-warm-secondary">Sent</span>
                           ) : (
-                            <span className="text-zinc-500">No</span>
+                            <span className="text-warm-ink-muted">No</span>
                           )}
                         </td>
                       </tr>
@@ -412,13 +401,13 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <section className="mt-8 rounded-xl border border-zinc-800 bg-zinc-900/80 p-6">
-            <h2 className="text-lg font-semibold text-white">
+          <section className={`mt-8 p-6 ${wp.card}`}>
+            <h2 className="font-display text-lg font-semibold text-warm-ink">
               Send a message to {patientName}
             </h2>
             <form onSubmit={handleSendFamilyMessage} className="mt-4 space-y-4">
               <label className="block">
-                <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                <span className={wp.label}>
                   Type a message for Setu to deliver on the next call
                 </span>
                 <input
@@ -431,18 +420,18 @@ export default function DashboardPage() {
                   }}
                   placeholder="Beta, kal doctor ke paas jana hai"
                   disabled={messageSending}
-                  className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600 disabled:opacity-60"
+                  className={wp.input}
                 />
               </label>
 
               {messageError ? (
-                <p className="text-sm text-red-400" role="alert">
+                <p className={wp.error} role="alert">
                   {messageError}
                 </p>
               ) : null}
 
               {messageSuccess ? (
-                <p className="text-sm text-emerald-400">
+                <p className={wp.success}>
                   Message will be delivered on the next call ✓
                 </p>
               ) : null}
@@ -450,18 +439,18 @@ export default function DashboardPage() {
               <button
                 type="submit"
                 disabled={messageSending}
-                className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                className={wp.btnPrimary}
               >
                 {messageSending ? "Sending…" : "Send Message"}
               </button>
             </form>
           </section>
 
-          <section className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/80 p-6">
-            <h2 className="text-lg font-semibold text-white">
+          <section className={`mt-6 p-6 ${wp.card}`}>
+            <h2 className="font-display text-lg font-semibold text-warm-ink">
               Parent Update Call
             </h2>
-            <p className="mt-2 text-sm text-zinc-400">
+            <p className={`mt-2 ${wp.subtitle}`}>
               Setu will call you with a voice summary of your parent&apos;s day
             </p>
             <form
@@ -469,9 +458,7 @@ export default function DashboardPage() {
               className="mt-4 grid gap-4 sm:grid-cols-2"
             >
               <label className="block">
-                <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  Frequency
-                </span>
+                <span className={wp.label}>Frequency</span>
                 <select
                   value={summaryFrequency}
                   onChange={(e) => {
@@ -479,7 +466,7 @@ export default function DashboardPage() {
                     setSummarySaveSuccess(false);
                     setSummarySaveError(null);
                   }}
-                  className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                  className={wp.select}
                 >
                   {SUMMARY_FREQUENCY_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -490,9 +477,7 @@ export default function DashboardPage() {
               </label>
 
               <label className="block">
-                <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  Time (IST)
-                </span>
+                <span className={wp.label}>Time (IST)</span>
                 <select
                   value={summaryTime}
                   onChange={(e) => {
@@ -500,7 +485,7 @@ export default function DashboardPage() {
                     setSummarySaveSuccess(false);
                     setSummarySaveError(null);
                   }}
-                  className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                  className={wp.select}
                 >
                   {SUMMARY_TIME_OPTIONS.map((time) => (
                     <option key={time} value={time}>
@@ -511,13 +496,13 @@ export default function DashboardPage() {
               </label>
 
               {summarySaveError ? (
-                <p className="text-sm text-red-400 sm:col-span-2" role="alert">
+                <p className={`${wp.error} sm:col-span-2`} role="alert">
                   {summarySaveError}
                 </p>
               ) : null}
 
               {summarySaveSuccess ? (
-                <p className="text-sm text-emerald-400 sm:col-span-2">
+                <p className={`${wp.success} sm:col-span-2`}>
                   Summary call settings saved ✓
                 </p>
               ) : null}
@@ -526,7 +511,7 @@ export default function DashboardPage() {
                 <button
                   type="submit"
                   disabled={summarySaving}
-                  className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  className={wp.btnPrimary}
                 >
                   {summarySaving ? "Saving…" : "Save"}
                 </button>
@@ -539,62 +524,51 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-4 text-zinc-100">
+    <div className={wp.pageCenter}>
       <div className="w-full max-w-md text-center">
-        <p className="text-3xl font-semibold tracking-tight text-white">
-          Setu
+        <p className={wp.brand}>Setu | सेतु</p>
+        <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-warm-primary">
+          Family portal
         </p>
-        <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+        <p className={`mt-4 ${wp.subtitle}`}>
           Enter your phone number to view your family&apos;s health updates
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-4 text-left">
+        <form
+          onSubmit={handleSubmit}
+          className={`mt-8 space-y-4 p-6 text-left ${wp.card}`}
+        >
           <label className="block">
-            <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-              Family phone
-            </span>
+            <span className={wp.label}>Family phone</span>
             <input
               type="tel"
               value={phoneInput}
               onChange={(e) => setPhoneInput(e.target.value)}
               placeholder="+919910036896"
               autoComplete="tel"
-              className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+              className={wp.input}
             />
           </label>
 
           {submitError ? (
-            <p className="text-sm text-red-400" role="alert">
+            <p className={wp.error} role="alert">
               {submitError}
             </p>
           ) : null}
 
-          <button
-            type="submit"
-            className="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500"
-          >
+          <button type="submit" className={`w-full ${wp.btnPrimary}`}>
             View Dashboard
           </button>
         </form>
 
         <p className="mt-6 flex flex-col gap-2 text-sm">
-          <Link
-            href="/setup"
-            className="text-emerald-500 underline-offset-2 hover:text-emerald-400 hover:underline"
-          >
+          <Link href="/setup" className={wp.link}>
             Register a new parent →
           </Link>
-          <button
-            type="button"
-            onClick={handleBackToHome}
-            className="text-zinc-500 underline-offset-2 hover:text-zinc-300 hover:underline"
-          >
+          <button type="button" onClick={handleBackToHome} className={wp.linkMuted}>
             ← Sign out / Back to Home
           </button>
-          <Link
-            href="/org"
-            className="text-zinc-500 underline-offset-2 hover:text-zinc-300 hover:underline"
-          >
+          <Link href="/org" className={wp.linkMuted}>
             Clinic / org portal →
           </Link>
         </p>

@@ -84,15 +84,15 @@ export function rowHighlightClass(log: {
   escalation_flag?: boolean | null;
 }): string {
   if (isCallEscalation(log) || log.action_required === "yes") {
-    return "bg-red-950/50 hover:bg-red-950/70";
+    return "bg-warm-error-container/40 hover:bg-warm-error-container/60";
   }
   if (log.medication_taken === "no") {
-    return "bg-yellow-950/40 hover:bg-yellow-950/60";
+    return "bg-amber-100/80 hover:bg-amber-100";
   }
   if (log.medication_taken === "yes") {
-    return "bg-emerald-950/40 hover:bg-emerald-950/60";
+    return "bg-warm-clinical-bg/80 hover:bg-warm-clinical-bg";
   }
-  return "hover:bg-zinc-800/50";
+  return "hover:bg-warm-linen/80";
 }
 
 export function formatDashboardDateTime(iso: string): string {

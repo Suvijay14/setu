@@ -47,13 +47,13 @@ export function adherenceBadgeClass(
 ): string {
   switch (badge) {
     case "good":
-      return "bg-emerald-500/15 text-emerald-300 border-emerald-500/30";
+      return "border-warm-secondary/30 bg-warm-clinical-bg text-warm-secondary";
     case "watch":
-      return "bg-amber-500/15 text-amber-300 border-amber-500/30";
+      return "border-warm-saffron/40 bg-amber-50 text-amber-900";
     case "missed":
-      return "bg-rose-500/15 text-rose-300 border-rose-500/30";
+      return "border-warm-error/30 bg-warm-error-container/50 text-warm-error";
     default:
-      return "bg-zinc-800 text-zinc-400 border-zinc-700";
+      return "border-warm-border-gentle bg-warm-linen text-warm-ink-muted";
   }
 }
 
@@ -62,13 +62,13 @@ export function riskBadgeClass(
 ): string {
   switch (level) {
     case "high":
-      return "bg-red-900 text-red-300 border-red-700";
+      return "border-warm-error/40 bg-warm-error-container text-warm-error";
     case "medium":
-      return "bg-yellow-900 text-yellow-300 border-yellow-700";
+      return "border-amber-300 bg-amber-50 text-amber-900";
     case "low":
-      return "bg-green-900 text-green-300 border-green-700";
+      return "border-warm-secondary/30 bg-warm-clinical-bg text-warm-secondary";
     default:
-      return "bg-gray-800 text-gray-400 border-gray-700";
+      return "border-warm-border-gentle bg-warm-linen text-warm-ink-muted";
   }
 }
 

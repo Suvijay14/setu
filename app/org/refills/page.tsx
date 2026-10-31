@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { formatDashboardDateTime } from "@/lib/dashboardClient";
 import { ORG_STORAGE_KEY, type StoredOrg } from "@/lib/orgClient";
+import { wp } from "@/lib/warmPortalClasses";
 import type { RefillPatientRow, RefillsByMedicine } from "@/lib/refills";
 
 type RefillsResponse = {
@@ -54,7 +55,7 @@ export default function OrgRefillsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
+      <div className="flex min-h-screen items-center justify-center bg-warm-paper text-warm-ink-muted">
         Loading refills…
       </div>
     );
@@ -62,11 +63,11 @@ export default function OrgRefillsPage() {
 
   if (!org) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-4 text-zinc-100">
-        <p className="text-sm text-zinc-400">Sign in to your organization first.</p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-warm-paper px-4 text-warm-ink">
+        <p className="text-sm text-warm-ink-muted">Sign in to your organization first.</p>
         <Link
           href="/org"
-          className="mt-4 text-sm text-emerald-500 underline-offset-2 hover:underline"
+          className="mt-4 text-sm text-warm-primary underline-offset-2 hover:underline"
         >
           Go to org login →
         </Link>
@@ -79,30 +80,26 @@ export default function OrgRefillsPage() {
   const byMedicine = data?.byMedicine ?? {};
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+    <div className={wp.page}>
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-              {org.name}
-            </p>
-            <h1 className="text-2xl font-semibold tracking-tight text-white">
-              Refills (last 7 days)
-            </h1>
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className={wp.label}>{org.name}</p>
+            <h1 className={wp.h1}>Refills (last 7 days)</h1>
+            <p className="mt-1 text-sm text-warm-ink-muted">
               Patients who said medicine ran out on a Setu call
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/org"
-              className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+              className="rounded-lg border border-warm-border-gentle bg-warm-linen px-4 py-2 text-sm font-medium text-warm-ink transition hover:bg-warm-linen"
             >
               ← Dashboard
             </Link>
             <Link
               href="/"
-              className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+              className="rounded-lg border border-warm-border-gentle bg-warm-linen px-4 py-2 text-sm font-medium text-warm-ink transition hover:bg-warm-linen"
             >
               Setu home
             </Link>
@@ -110,40 +107,40 @@ export default function OrgRefillsPage() {
         </header>
 
         {error ? (
-          <p className="mb-6 text-sm text-red-400" role="alert">
+          <p className="mb-6 text-sm text-warm-error" role="alert">
             {error}
           </p>
         ) : null}
 
-        <div className="mb-8 rounded-xl border border-amber-500/30 bg-amber-500/10 p-5">
-          <p className="text-3xl font-semibold text-white">{total}</p>
-          <p className="text-sm text-amber-100/90">
+        <div className="mb-8 rounded-2xl border border-warm-saffron/40 bg-amber-50 p-5">
+          <p className="font-display text-3xl font-semibold text-warm-primary">{total}</p>
+          <p className="text-sm text-amber-900">
             patient{total === 1 ? "" : "s"} need refills
           </p>
           {data?.org.pharmacy_phone ? (
-            <p className="mt-2 text-xs text-zinc-400">
+            <p className="mt-2 text-xs text-warm-ink-muted">
               Preferred pharmacy on file — refill SMS sent automatically when
               detected on calls.
             </p>
           ) : (
-            <p className="mt-2 text-xs text-zinc-500">
-              Add <code className="text-zinc-400">pharmacy_phone</code> on your
+            <p className="mt-2 text-xs text-warm-ink-muted">
+              Add <code className="text-warm-ink-muted">pharmacy_phone</code> on your
               organization row to auto-SMS the pharmacy on refill intent.
             </p>
           )}
         </div>
 
         {total === 0 ? (
-          <p className="text-center text-sm text-zinc-500">
+          <p className="text-center text-sm text-warm-ink-muted">
             No refill requests in the last 7 days.
           </p>
         ) : (
           <>
             <section className="mb-10">
-              <h2 className="mb-3 text-sm font-semibold text-white">All patients</h2>
-              <div className="overflow-hidden rounded-xl border border-zinc-800">
-                <table className="min-w-full divide-y divide-zinc-800 text-left text-sm">
-                  <thead className="bg-zinc-900/60 text-xs uppercase tracking-wide text-zinc-400">
+              <h2 className="mb-3 text-sm font-semibold text-warm-ink">All patients</h2>
+              <div className={wp.tableWrap}>
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-warm-linen/60 text-xs uppercase tracking-wide text-warm-ink-muted">
                     <tr>
                       <th className="px-4 py-3 font-medium">Patient</th>
                       <th className="px-4 py-3 font-medium">Medicine</th>
@@ -151,19 +148,19 @@ export default function OrgRefillsPage() {
                       <th className="px-4 py-3 font-medium">Pharmacy</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-800/80 bg-zinc-950">
+                  <tbody className={wp.tbody}>
                     {entries.map((row) => (
                       <tr key={`${row.patient_name}-${row.needed_at}`}>
-                        <td className="px-4 py-3 font-medium text-zinc-100">
+                        <td className="px-4 py-3 font-medium text-warm-ink">
                           {row.patient_name}
                           {row.phone ? (
-                            <span className="mt-0.5 block text-xs font-normal text-zinc-500">
+                            <span className="mt-0.5 block text-xs font-normal text-warm-ink-muted">
                               {row.phone}
                             </span>
                           ) : null}
                         </td>
-                        <td className="px-4 py-3 text-zinc-300">{row.medicine}</td>
-                        <td className="px-4 py-3 text-zinc-400">
+                        <td className="px-4 py-3 text-warm-ink-muted">{row.medicine}</td>
+                        <td className="px-4 py-3 text-warm-ink-muted">
                           {formatDashboardDateTime(row.needed_at)}
                         </td>
                         <td className="px-4 py-3">
@@ -172,12 +169,12 @@ export default function OrgRefillsPage() {
                               href={row.pharmacy_link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-xs text-emerald-500 underline-offset-2 hover:underline"
+                              className="text-xs text-warm-primary underline-offset-2 hover:underline"
                             >
                               Maps →
                             </a>
                           ) : (
-                            <span className="text-xs text-zinc-600">—</span>
+                            <span className="text-xs text-warm-ink-muted">—</span>
                           )}
                         </td>
                       </tr>
@@ -188,20 +185,20 @@ export default function OrgRefillsPage() {
             </section>
 
             <section>
-              <h2 className="mb-3 text-sm font-semibold text-white">
+              <h2 className="mb-3 text-sm font-semibold text-warm-ink">
                 Grouped by medicine
               </h2>
               <div className="space-y-4">
                 {Object.entries(byMedicine).map(([medicine, rows]) => (
                   <div
                     key={medicine}
-                    className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4"
+                    className="rounded-xl border border-zinc-800 bg-warm-linen/50 p-4"
                   >
                     <h3 className="font-medium text-amber-200">{medicine}</h3>
-                    <ul className="mt-2 space-y-2 text-sm text-zinc-400">
+                    <ul className="mt-2 space-y-2 text-sm text-warm-ink-muted">
                       {rows.map((row) => (
                         <li key={`${medicine}-${row.patient_name}-${row.needed_at}`}>
-                          <span className="text-zinc-200">{row.patient_name}</span>
+                          <span className="text-warm-ink">{row.patient_name}</span>
                           {" · "}
                           {formatDashboardDateTime(row.needed_at)}
                           {row.pharmacy_link ? (
@@ -211,7 +208,7 @@ export default function OrgRefillsPage() {
                                 href={row.pharmacy_link}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-emerald-500 hover:underline"
+                                className="text-warm-primary hover:underline"
                               >
                                 pharmacy near patient
                               </a>
